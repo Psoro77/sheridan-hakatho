@@ -1,0 +1,29 @@
+{
+  "split": "valid",
+  "results": {
+    "cvss_first": {
+      "hits@100": 4,
+      "hits@500": 8,
+      "hits@1000": 14,
+      "pr_auc": 0.02122,
+      "n": 35280,
+      "positives": 52
+    },
+    "epss_first": {
+      "hits@100": 4,
+      "hits@500": 8,
+      "hits@1000": 13,
+      "pr_auc": 0.03097,
+      "n": 35280,
+      "positives": 52
+    },
+    "exploit_then_epss": {
+      "hits@100": 8,
+      "hits@500": 18,
+      "hits@1000": 22,
+      "pr_auc": 0.04722,
+      "n": 35280,
+      "positives": 52
+    }
+  }
+}
