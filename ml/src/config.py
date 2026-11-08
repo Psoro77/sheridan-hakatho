@@ -26,6 +26,9 @@ SPLITS = {
     "train_A": {"start": "2024-01-01", "end": "2024-12-31", "label_cutoff": "2024-12-31"},
     "valid": {"start": "2025-01-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
     "train_final": {"start": "2024-01-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
+    # Fold B (second validation fold): train labels end before validB's period starts.
+    "trainB": {"start": "2024-01-01", "end": "2025-03-31", "label_cutoff": "2025-03-31"},
+    "validB": {"start": "2025-04-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
     # predict comes from scoreboard_2026.csv; judges count KEV through 2026-11-04.
     "predict": {"start": "2026-01-01", "end": "2026-09-30", "label_cutoff": "2026-11-04"},
 }

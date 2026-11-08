@@ -25,6 +25,19 @@ def ranking_report(y, score) -> dict:
     }
 
 
+def bootstrap_ci(y, score, k: int = 500, n: int = 300, seed: int = 42) -> tuple[int, int]:
+    """95% bootstrap interval of hits@k, resampling rows (scaled so k is a fixed share of rows)."""
+    y = np.asarray(y).astype(int)
+    s = np.nan_to_num(np.asarray(score, dtype=float), nan=-1e9)
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n):
+        i = rng.integers(0, len(y), len(y))
+        vals.append(hits_at_k(y[i], s[i], k))
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return int(lo), int(hi)
+
+
 def lexsort_score(df: pd.DataFrame, keys: list[str]) -> np.ndarray:
     """Turn a multi-key descending sort (NaN last) into a single rank-score (higher = better)."""
     tmp = df[keys].copy()

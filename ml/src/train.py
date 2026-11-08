@@ -1,6 +1,6 @@
-"""Train LightGBM (and an LR sanity baseline).
+"""Model selection on two validation folds, then the final model.
 
-python -m src.train --split train_A --eval valid      # model selection + ablation
+python -m src.train --split train_A --eval valid      # experiments on fold A (train_A->valid) + fold B (trainB->validB)
 python -m src.train --split train_final               # final model for the scoreboard
 """
 from __future__ import annotations
@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 
+import joblib
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -16,41 +17,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .config import MODEL_DIR, OUTPUT_DIR, PROCESSED_DIR, SEED, seed_everything
+from .config import MODEL_DIR, OUTPUT_DIR, PROCESSED_DIR, SEED, TOP_K, seed_everything
 from .features import FEATURE_GROUPS
-from .metrics import ranking_report
+from .metrics import bootstrap_ci, ranking_report
 
-ABLATION = [
-    ("1_exploit", ["exploit"], False),
-    ("2_+vendor_kw", ["exploit", "vendor_kw"], False),
-    ("3_+text", ["exploit", "vendor_kw", "text"], False),
-    ("4_+cluster", ["exploit", "vendor_kw", "text", "cluster"], False),
-    ("5_+caution", ["exploit", "vendor_kw", "text", "cluster", "caution"], False),
-    ("5b_+caution_imputed", ["exploit", "vendor_kw", "text", "cluster", "caution"], True),
-    ("6_+itw", ["exploit", "vendor_kw", "text", "cluster", "caution", "itw"], False),
-    ("6b_core+itw", ["exploit", "vendor_kw", "text", "cluster", "itw"], False),
-]
-DEFAULT_GROUPS = ["exploit", "vendor_kw", "text", "cluster"]
-ABLATION_FOR_BLEND = ["4_+cluster", "6b_core+itw"]
-# Compact, robust LR: few strong, explainable features (works well with ~50 positives).
-COMPACT = [
-    "epss_pct", "n_exploit_flags", "days_before_snapshot", "days_to_label_cutoff",
-    "assigner_kev_rate", "desc_vendor_kev_rate", "vendor_kev_count",
-    "text_lr_score", "kev_sim_max", "cluster_kev_rate", "kw_unauth", "kw_rce", "desc_itw_phrase",
-]
-
-
-def make_compact_lr():
-    return make_pipeline(
-        SimpleImputer(strategy="median", add_indicator=False), StandardScaler(),
-        LogisticRegression(C=0.1, max_iter=5000, class_weight="balanced", random_state=SEED),
-    )
+FOLDS = {"A": ("train_A", "valid"), "B": ("trainB", "validB")}
 N_SEEDS = 5
 SELECTION_PATH = OUTPUT_DIR / "selected_features.json"
+K_GRID = list(range(0, TOP_K + 1, 50))
 
-# Heavily regularized: only ~40 positives in train_A. Early stopping on ~50 valid positives stopped
-# at 2 to 10 iterations (noise), so we use a fixed number of rounds and sqrt(neg/pos) class weight
-# (full neg/pos ~1000x made trees memorize the 40 positives; see docs/findings.md).
+# Heavily regularized: only ~40 to 60 train positives. Early stopping on ~50 valid positives stopped
+# at 2 to 10 iterations (noise), so: fixed rounds, sqrt(neg/pos) class weight, depth-2 trees, bagging.
 PARAMS = dict(
     objective="binary", learning_rate=0.02, num_leaves=4, max_depth=2, min_child_samples=20,
     min_sum_hessian_in_leaf=1e-3, feature_fraction=0.7, bagging_fraction=0.8, bagging_freq=1,
@@ -58,131 +35,237 @@ PARAMS = dict(
 )
 N_ROUNDS = 300
 
+CORE = ["exploit", "vendor_kw", "text", "cluster"]
+LGBM_EXPERIMENTS = {
+    "L1_exploit": ["exploit"],
+    "L2_+vendor_kw": ["exploit", "vendor_kw"],
+    "L3_+text": ["exploit", "vendor_kw", "text"],
+    "L4_core(+cluster)": CORE,
+    "L5_core+prior": CORE + ["prior"],
+    "L6_core+sibling": CORE + ["sibling"],
+    "L7_core+prior+sibling": CORE + ["prior", "sibling"],
+    "L8_core+prior+sibling+caution": CORE + ["prior", "sibling", "caution"],
+    "L9_core+prior+sibling+itw": CORE + ["prior", "sibling", "itw"],
+}
+# Compact, robust LR: few strong, explainable features (works well with ~50 positives).
+COMPACT_V1 = [
+    "epss_pct", "n_exploit_flags", "days_before_snapshot", "days_to_label_cutoff",
+    "assigner_kev_rate", "desc_vendor_kev_rate", "vendor_kev_count",
+    "text_lr_score", "kev_sim_max", "cluster_kev_rate", "kw_unauth", "kw_rce", "desc_itw_phrase",
+]
+COMPACT_V2 = [
+    "epss_pct", "exploitdb", "metasploit", "nuclei", "poc_github", "days_before_snapshot", "days_to_label_cutoff",
+    "assigner_kev_rate", "desc_vendor_kev_rate", "desc_product_kev_rate", "vendor_kev_count",
+    "desc_product_kev_count", "kev_vendor_kev_12m", "desc_product_kev_12m",
+    "text_lr_score", "prior_lr_score", "kev_sim_max", "cluster_kev_rate", "kw_unauth", "kw_rce",
+    "desc_itw_phrase", "sib_batch_size", "sib_max_text_lr", "sib_any_flag", "sib_any_itw",
+]
+LR_EXPERIMENTS = {"C1_compact_v1": COMPACT_V1, "C2_compact_v2": COMPACT_V2}
+# Reported but never selectable: CVSS/CWE gains come from NIST's post-attack analysis (100% of
+# positives are NIST-analysed with no blank CVSS/CWE vs 65% / ~4% of negatives; 2026 has only 19%
+# NIST-sourced scores vs 37-48% in training). See docs/columns_used.md.
+REPORT_ONLY = {"L8_core+prior+sibling+caution"}
+LOG_COLS = {"vendor_kev_count", "desc_product_kev_count", "kev_vendor_kev_12m", "desc_product_kev_12m",
+            "sib_batch_size", "assigner_kev_count", "desc_vendor_kev_count"}
+
 
 def columns_for(groups: list[str]) -> list[str]:
     return [c for g in groups for c in FEATURE_GROUPS[g]]
 
 
-def impute_caution(train: pd.DataFrame, others: list[pd.DataFrame]) -> None:
-    """Fill caution NaNs with train medians so the model can't learn from 'NIST hasn't scored this'."""
-    cols = FEATURE_GROUPS["caution"]
-    med = train[cols].median()
-    for d in (train, *others):
-        d[cols] = d[cols].fillna(med)
-
-
+# ---------------------------------------------------------------- models
 def fit_lgbm(Xtr, ytr, seed=SEED, n_rounds=N_ROUNDS):
     pos = max(1, int(ytr.sum()))
     params = {**PARAMS, "scale_pos_weight": float(np.sqrt((len(ytr) - pos) / pos)), "seed": seed}
     return lgb.train(params, lgb.Dataset(Xtr, ytr), num_boost_round=n_rounds)
 
 
-def multi_seed(Xtr, ytr, Xva, yva) -> tuple[np.ndarray, list[int]]:
-    """Average rank of N_SEEDS bagged models (variance is high with ~50 positives)."""
-    scores = []
-    for s in range(N_SEEDS):
-        m = fit_lgbm(Xtr, ytr, seed=SEED + s)
-        scores.append(pd.Series(m.predict(Xva)).rank(pct=True).to_numpy())
-    return np.mean(scores, axis=0), [N_ROUNDS] * N_SEEDS
+def lr_frame(d: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    X = d[cols].astype(float).copy()
+    for c in cols:
+        if c in LOG_COLS:
+            X[c] = np.log1p(X[c].clip(lower=0))
+    return X
+
+
+def make_compact_lr():
+    return make_pipeline(
+        SimpleImputer(strategy="median"), StandardScaler(),
+        LogisticRegression(C=0.1, max_iter=5000, class_weight="balanced", random_state=SEED),
+    )
+
+
+def rank_pct(s) -> np.ndarray:
+    return pd.Series(np.asarray(s, dtype=float)).rank(pct=True, na_option="bottom").to_numpy()
+
+
+def score_lgbm(tr, ytr, te, cols) -> np.ndarray:
+    return np.mean([rank_pct(fit_lgbm(tr[cols], ytr, seed=SEED + s).predict(te[cols])) for s in range(N_SEEDS)], axis=0)
+
+
+def score_lr(tr, ytr, te, cols) -> np.ndarray:
+    m = make_compact_lr().fit(lr_frame(tr, cols), ytr)
+    return m.decision_function(lr_frame(te, cols))
+
+
+# ---------------------------------------------------------------- ranking strategies
+def final_order(score, flagged, itw, k_flag: int | None, itw_first: bool, k: int = TOP_K) -> np.ndarray:
+    """Return a ranking score (higher = earlier). Optional: ITW rows first, then a top-k split with
+    k_flag slots for rows with exploit code and k - k_flag for rows without, rest by score."""
+    s = rank_pct(score)
+    out = s.copy()
+    n = len(s)
+    flagged = np.asarray(flagged, dtype=bool)
+    itw = np.asarray(itw, dtype=bool) if itw_first else np.zeros(n, dtype=bool)
+    chosen = np.zeros(n, dtype=bool)
+    chosen |= itw
+    if k_flag is not None:
+        room = k - chosen.sum()
+        kf = min(k_flag, room)
+        f_idx = np.where(flagged & ~chosen)[0]
+        f_idx = f_idx[np.argsort(-s[f_idx], kind="stable")][:kf]
+        chosen[f_idx] = True
+        u_idx = np.where(~flagged & ~chosen)[0]
+        u_idx = u_idx[np.argsort(-s[u_idx], kind="stable")][: k - chosen.sum()]
+        chosen[u_idx] = True
+    out = s + np.where(chosen, 2.0, 0.0) + np.where(itw, 1.0, 0.0)
+    return out
+
+
+def plateau_k(per_k: dict[int, int]) -> int:
+    """Centre of the best plateau: maximise the 3-point moving average of fold-summed hits."""
+    ks = sorted(per_k)
+    smooth = {k: np.mean([per_k[j] for j in ks if abs(j - k) <= 50]) for k in ks}
+    best = max(smooth.values())
+    cands = [k for k in ks if smooth[k] >= best - 1e-9]
+    return cands[len(cands) // 2]
+
+
+# ---------------------------------------------------------------- validation
+def load_fold(name: str):
+    tr_name, va_name = FOLDS[name]
+    tr = pd.read_parquet(PROCESSED_DIR / f"features_{tr_name}.parquet")
+    va = pd.read_parquet(PROCESSED_DIR / f"features_{va_name}.parquet")
+    return tr, tr["label"].astype(int).to_numpy(), va, va["label"].astype(int).to_numpy()
 
 
 def run_validation() -> None:
-    tr = pd.read_parquet(PROCESSED_DIR / "features_train_A.parquet")
-    va = pd.read_parquet(PROCESSED_DIR / "features_valid.parquet")
-    ytr, yva = tr["label"].astype(int).to_numpy(), va["label"].astype(int).to_numpy()
-    print(f"train_A {tr.shape} pos={ytr.sum()} | valid {va.shape} pos={yva.sum()}")
+    folds = {f: load_fold(f) for f in FOLDS}
+    for f, (tr, ytr, va, yva) in folds.items():
+        print(f"fold {f}: train {tr.shape} pos={ytr.sum()} | valid {va.shape} pos={yva.sum()}")
 
-    rows, valid_scores = [], pd.DataFrame({"cve_id": va["cve_id"]})
-    for name, groups, impute in ABLATION:
+    # 1) raw scores per candidate per fold
+    cand: dict[str, dict] = {}
+    for name, groups in LGBM_EXPERIMENTS.items():
         cols = columns_for(groups)
-        a, b = tr.copy(), va.copy()
-        if impute:
-            impute_caution(a, [b])
-        score, iters = multi_seed(a[cols], ytr, b[cols], yva)
-        rep = ranking_report(yva, score)
-        rows.append({"row": name, "groups": "+".join(groups), "n_features": len(cols), **rep,
-                     "best_iter_mean": int(np.mean(iters))})
-        valid_scores[f"score_lgbm_{name}"] = score
-        print(f"{name:22s} hits@100={rep['hits@100']:>3} hits@500={rep['hits@500']:>3} "
-              f"hits@1000={rep['hits@1000']:>3} pr_auc={rep['pr_auc']} iters={iters}")
+        cand[name] = {"type": "lgbm", "features": cols, "groups": groups,
+                      "scores": {f: score_lgbm(tr, ytr, va, cols) for f, (tr, ytr, va, _) in folds.items()}}
+    for name, cols in LR_EXPERIMENTS.items():
+        cand[name] = {"type": "lr", "features": cols,
+                      "scores": {f: score_lr(tr, ytr, va, cols) for f, (tr, ytr, va, _) in folds.items()}}
 
-    abl = pd.DataFrame(rows)
+    def fold_sum(scores: dict, k_flag=None, itw_first=False) -> tuple[int, dict]:
+        reps = {}
+        for f, (_, _, va, yva) in folds.items():
+            s = final_order(scores[f], va["n_exploit_flags"] > 0, va["desc_itw_phrase"] == 1, k_flag, itw_first)
+            reps[f] = ranking_report(yva, s)
+        return sum(r["hits@500"] for r in reps.values()), reps
+
+    # 2) strategies: plain, segmented (k_flag from plateau), segmented + ITW-first
+    rows = []
+
+    def evaluate(name: str, c: dict) -> None:
+        for strat in ("plain", "segmented", "segmented+itw"):
+            itw_first = strat == "segmented+itw"
+            k_flag = None
+            if strat != "plain":
+                per_k = {k: fold_sum(c["scores"], k, itw_first)[0] for k in K_GRID}
+                k_flag = plateau_k(per_k)
+            total, reps = fold_sum(c["scores"], k_flag, itw_first)
+            row = {"experiment": name, "type": c["type"], "strategy": strat, "k_flag": k_flag, "fold_sum@500": total}
+            for f, r in reps.items():
+                _, _, va, yva = folds[f]
+                s = final_order(c["scores"][f], va["n_exploit_flags"] > 0, va["desc_itw_phrase"] == 1, k_flag, itw_first)
+                lo, hi = bootstrap_ci(yva, s)
+                row.update({f"{f}_hits@100": r["hits@100"], f"{f}_hits@500": r["hits@500"],
+                            f"{f}_hits@1000": r["hits@1000"], f"{f}_pr_auc": r["pr_auc"], f"{f}_ci95": f"{lo}-{hi}"})
+            row["selectable"] = name not in REPORT_ONLY
+            rows.append(row)
+
+    for name, c in cand.items():
+        evaluate(name, c)
+    # best selectable LGBM + best LR (by their best strategy) -> rank blend candidate
+    tmp = pd.DataFrame(rows)
+    tmp = tmp[tmp["selectable"]].groupby("experiment")["fold_sum@500"].max()
+    best_l = max((n for n in tmp.index if cand[n]["type"] == "lgbm"), key=lambda n: tmp[n])
+    best_c = max((n for n in tmp.index if cand[n]["type"] == "lr"), key=lambda n: tmp[n])
+    cand["B1_blend"] = {"type": "blend", "components": [best_l, best_c],
+                        "scores": {f: (rank_pct(cand[best_l]["scores"][f]) + rank_pct(cand[best_c]["scores"][f])) / 2
+                                   for f in folds}}
+    evaluate("B1_blend", cand["B1_blend"])
+    print(f"blend components: {best_l} + {best_c}")
+    res = pd.DataFrame(rows)
+    res.to_csv(OUTPUT_DIR / "experiments.csv", index=False)
+    with pd.option_context("display.width", 250, "display.max_rows", 200):
+        print(res[["experiment", "strategy", "k_flag", "A_hits@500", "A_ci95", "B_hits@500", "B_ci95",
+                   "fold_sum@500", "A_hits@1000", "B_hits@1000"]].to_string(index=False))
+
+    # Ablation table in the CLAUDE.md format (plain LightGBM rows, fold A = valid).
+    abl = res[(res["type"] == "lgbm") & (res["strategy"] == "plain")]
     abl.to_csv(OUTPUT_DIR / "ablation.csv", index=False)
 
-    # LR sanity baseline on the default groups.
-    cols = columns_for(DEFAULT_GROUPS)
-    lr = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
-                       LogisticRegression(C=0.1, max_iter=3000, class_weight="balanced", random_state=SEED))
-    lr.fit(tr[cols], ytr)
-    valid_scores["score_logreg_default"] = lr.decision_function(va[cols])
-    print("logreg default:", ranking_report(yva, valid_scores["score_logreg_default"]))
-
-    # Parallel approaches (selected on valid only).
-    rk = lambda s: pd.Series(np.asarray(s, dtype=float)).rank(pct=True, na_option="bottom").to_numpy()
-    clr = make_compact_lr().fit(tr[COMPACT], ytr)
-    valid_scores["score_compact_lr"] = clr.decision_function(va[COMPACT])
-    flags_epss = va["n_exploit_flags"].clip(upper=1) + va["epss_pct"].fillna(0)
-    valid_scores["score_text_first"] = (rk(va["text_lr_score"]) + rk(flags_epss)) / 2
-    approach_rows = []
-    for name in ABLATION_FOR_BLEND:
-        valid_scores[f"score_blend_{name}"] = (rk(valid_scores[f"score_lgbm_{name}"]) + rk(valid_scores["score_compact_lr"])) / 2
-    for col in [c for c in valid_scores.columns if c.startswith("score_") and not c.startswith("score_lgbm_")]:
-        rep = ranking_report(yva, valid_scores[col])
-        approach_rows.append({"approach": col.removeprefix("score_"), **rep})
-        print(f"{col:32s} hits@100={rep['hits@100']:>3} hits@500={rep['hits@500']:>3} hits@1000={rep['hits@1000']:>3} pr_auc={rep['pr_auc']}")
-    pd.DataFrame(approach_rows).to_csv(OUTPUT_DIR / "approaches.csv", index=False)
-
-    # Selection rule (logged): start from core; add a caution group only if it gains >= 2 hits@500
-    # AND the gain survives median imputation (i.e. it does not come from missingness).
-    h = abl.set_index("row")["hits@500"]
-    groups = list(DEFAULT_GROUPS)
-    best_core = max(h["2_+vendor_kw"], h["3_+text"], h["4_+cluster"])
-    decisions = {}
-    if h["5_+caution"] - h["4_+cluster"] >= 2 and h["5b_+caution_imputed"] - h["4_+cluster"] >= 2:
-        groups.append("caution")
-        decisions["caution"] = "kept (gain survives imputation)"
-    else:
-        decisions["caution"] = "dropped (no robust gain on valid)"
-    base_itw = h["6_+itw"] - h["5_+caution"] if "caution" in groups else h["6b_core+itw"] - h["4_+cluster"]
-    if base_itw >= 2:
-        groups.append("itw")
-        decisions["itw"] = f"kept (+{base_itw} hits@500)"
-    else:
-        decisions["itw"] = f"dropped ({base_itw:+} hits@500)"
-    impute = "caution" in groups
-    n_iter = int(abl.loc[abl["groups"] == "+".join(groups), "best_iter_mean"].iloc[0]) if (
-        abl["groups"] == "+".join(groups)).any() else int(abl["best_iter_mean"].median())
-    sel = {"groups": groups, "impute_caution": impute, "best_iter_train_A": n_iter,
-           "decisions": decisions, "best_core_hits@500": int(best_core)}
+    # 3) selection: highest fold_sum; ties -> simpler strategy, then higher hits@1000 sum.
+    order = {"plain": 0, "segmented": 1, "segmented+itw": 2}
+    res["_simpl"] = res["strategy"].map(order)
+    res["_h1000"] = res["A_hits@1000"] + res["B_hits@1000"]
+    best = res[res["selectable"]].sort_values(["fold_sum@500", "_simpl", "_h1000"], ascending=[False, True, False]).iloc[0]
+    c = cand[best["experiment"]]
+    components = ([{"name": n, "type": cand[n]["type"], "features": cand[n]["features"]} for n in c["components"]]
+                  if c["type"] == "blend" else [{"name": best["experiment"], "type": c["type"], "features": c["features"]}])
+    sel = {
+        "experiment": best["experiment"], "strategy": best["strategy"],
+        "k_flag": None if pd.isna(best["k_flag"]) else int(best["k_flag"]),
+        "itw_first": best["strategy"] == "segmented+itw", "components": components,
+        "fold_sum@500": int(best["fold_sum@500"]), "A_hits@500": int(best["A_hits@500"]),
+        "B_hits@500": int(best["B_hits@500"]),
+        "reference_v2_plain_L4": res.query("experiment == 'L4_core(+cluster)' and strategy == 'plain'")[
+            ["A_hits@500", "B_hits@500"]].iloc[0].astype(int).tolist(),
+    }
     SELECTION_PATH.write_text(json.dumps(sel, indent=2))
-    print("selection:", sel)
+    print("\nselection:", json.dumps(sel, indent=1))
 
-    # Score column the evaluator reports as "model".
-    sel_name = next((n for n, g, imp in ABLATION if g == groups and imp == impute), None)
-    if sel_name:
-        valid_scores["score_model_selected"] = valid_scores[f"score_lgbm_{sel_name}"]
-    valid_scores.to_parquet(OUTPUT_DIR / "valid_scores.parquet", index=False)
+    # valid (fold A) scores for evaluate.py
+    vs = pd.DataFrame({"cve_id": folds["A"][2]["cve_id"]})
+    for n, cc in cand.items():
+        vs[f"score_{n}"] = cc["scores"]["A"]
+    _, _, va, _ = folds["A"]
+    vs["score_model_selected"] = final_order(c["scores"]["A"], va["n_exploit_flags"] > 0, va["desc_itw_phrase"] == 1,
+                                             sel["k_flag"], sel["itw_first"])
+    vs.to_parquet(OUTPUT_DIR / "valid_scores.parquet", index=False)
 
 
+# ---------------------------------------------------------------- final
 def run_final() -> None:
     sel = json.loads(SELECTION_PATH.read_text())
     tr = pd.read_parquet(PROCESSED_DIR / "features_train_final.parquet")
-    cols = columns_for(sel["groups"])
-    if sel["impute_caution"]:
-        impute_caution(tr, [])
     y = tr["label"].astype(int).to_numpy()
-    # Same number of rounds as validated: row count scaling is unreliable with this few positives.
-    n_rounds = N_ROUNDS
-    print(f"train_final {tr.shape} pos={y.sum()} features={len(cols)} rounds={n_rounds}")
-    for s in range(N_SEEDS):
-        m = fit_lgbm(tr[cols], y, seed=SEED + s, n_rounds=n_rounds)
-        m.save_model(str(MODEL_DIR / f"lgbm_final_{s}.txt"))
-    medians = tr[FEATURE_GROUPS["caution"]].median().to_dict() if sel["impute_caution"] else {}
-    (MODEL_DIR / "final_meta.json").write_text(json.dumps(
-        {"features": cols, "n_rounds": n_rounds, "n_models": N_SEEDS, "caution_medians": medians, **sel}, indent=2))
-    imp = pd.Series(m.feature_importance("gain"), index=cols).sort_values(ascending=False)
-    imp.to_csv(OUTPUT_DIR / "feature_importance.csv", header=["gain"])
-    print(imp.head(15).to_string())
+    print(f"train_final {tr.shape} pos={y.sum()} | selected {sel['experiment']} / {sel['strategy']} k_flag={sel['k_flag']}")
+    for comp in sel["components"]:
+        cols = comp["features"]
+        if comp["type"] == "lgbm":
+            for s in range(N_SEEDS):
+                m = fit_lgbm(tr[cols], y, seed=SEED + s)
+                m.save_model(str(MODEL_DIR / f"{comp['name']}_{s}.txt"))
+            imp = pd.Series(m.feature_importance("gain"), index=cols).sort_values(ascending=False)
+            imp.to_csv(OUTPUT_DIR / "feature_importance.csv", header=["gain"])
+            print(imp.head(15).to_string())
+        else:
+            m = make_compact_lr().fit(lr_frame(tr, cols), y)
+            joblib.dump(m, MODEL_DIR / f"{comp['name']}.joblib")
+            coef = pd.Series(m[-1].coef_[0], index=cols).sort_values(ascending=False)
+            coef.to_csv(OUTPUT_DIR / "lr_coefficients.csv", header=["coef_std"])
+            print(coef.to_string())
+    (MODEL_DIR / "final_meta.json").write_text(json.dumps({**sel, "n_models": N_SEEDS, "n_rounds": N_ROUNDS}, indent=2))
 
 
 def main() -> None:
