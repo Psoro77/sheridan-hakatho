@@ -32,6 +32,8 @@ showing we checked for leakage, so log every decision.
 - **IBM Granite embeddings** (Hugging Face `ibm-granite`) for CVE descriptions. This is our mandatory IBM tech
   in the ML part. Confirm the exact model ID on Hugging Face; prefer the smallest English or multilingual
   R2 embedding model (under 100M parameters, runs on CPU).
+  **Implemented:** `ibm-granite/granite-embedding-30m-english` at `max_seq_length=128`. R2-small
+  (ModernBERT) ran at 12 texts/s on our CPU laptop (about 5.5 h); the 30M model runs at 63 texts/s (about 1 h).
 - **Entire** is enabled on this repo: work in small commits so sessions and checkpoints stay readable.
   Record project rules and decisions in Entire Brain (especially the leakage rules below).
 - **TigerData** (Postgres) is the app's database. ML writes Parquet; `export_tigerdata.py` loads it.
@@ -42,7 +44,8 @@ showing we checked for leakage, so log every decision.
 
 ## 3. Data
 
-All raw files are in `ml/data/raw/` (gitignored, about 850 MB). Join on `cve_id`. `weakness_types.csv`
+All raw files are in `IBM/data/data/` (gitignored, about 850 MB; override with env var `AEGIS_RAW_DIR`).
+Live 2026 KEV labels are in `IBM/data/external/kev_live/` (**check only**, see section 10). Join on `cve_id`. `weakness_types.csv`
 matches entries of `cwe_ids` (split on `;`). If a CSV reader fails, set quote and escape characters to `"`.
 Read version columns as text. Load only the columns you need.
 
@@ -216,8 +219,30 @@ impact_score, cluster_id, cluster_name, reasons (JSON list of 3 strings), shap_t
 ## 9. Repo layout
 
 ```
-
+IBM/                     track README, data dictionary, raw data (data/data/, gitignored)
+  data/external/kev_live/  live 2026 KEV labels: read ONLY by src/check_2026.py
+ml/
+  src/config.py          paths, splits, seed, keyword lists, embedding model
+  src/data_io.py         column-selective CSV loaders
+  src/build_dataset.py   train_A / valid / train_final / predict splits
+  src/embed.py           Granite embeddings (cached, resumable chunks)
+  src/cluster.py         UMAP + HDBSCAN clusters, outputs/clusters.csv
+  src/features.py        all features, FEATURE_GROUPS for ablation
+  src/train.py           ablation + parallel approaches on valid; final LightGBM
+  src/metrics.py         hits@k, PR-AUC, baselines
+  src/evaluate.py        outputs/metrics.json
+  src/predict.py         scores + top500.csv
+  src/explain.py         SHAP reasons, tiers, predictions.parquet
+  src/export_tigerdata.py  load to TigerData (needs TIGERDATA_URL)
+  src/check_2026.py      post-hoc check vs live KEV (not in run_all.sh)
+  data/processed/        parquet splits, features, embeddings (gitignored)
+  models/                LightGBM boosters + final_meta.json (gitignored)
+  outputs/               top500.csv, predictions.parquet, metrics, ablation, clusters
+  docs/                  columns_used.md, findings.md
+  run_all.sh             full pipeline, one command
 ```
+
+Run everything from `ml/` with the repo venv: `bash run_all.sh` (or `../.venv/Scripts/python -m src.<step>`).
 
 Commands (one per step, each idempotent):
 ```
@@ -235,6 +260,8 @@ python -m src.export_tigerdata
 
 Stack: Python 3.11, pandas + pyarrow, scikit-learn 1.3 or later, lightgbm (or xgboost),
 sentence-transformers, umap-learn, shap, psycopg. Pin versions in `requirements.txt`.
+**Implemented:** Python 3.13 venv at `.venv/` (pandas 3.1, scikit-learn 1.9, lightgbm 4.7, torch CPU);
+exact pins in `ml/requirements.txt`.
 
 ---
 
@@ -244,6 +271,9 @@ sentence-transformers, umap-learn, shap, psycopg. Pin versions in `requirements.
   caution group and ablate it. Do not silently add it.
 - Never read the scoreboard's future: no lookups beyond `snapshot_month`, no KEV after the cutoff for the split.
 - Do not tune on the scoreboard (it has no labels; any "tuning" there would be guessing).
+- Live 2026 KEV labels (`IBM/data/external/kev_live/`) are the answer key. Only `src/check_2026.py`
+  reads them, as a report. Never use them for features, training, or choosing between models; pick on
+  `valid`, then report the 2026 number for every candidate.
 - Print shapes, positive counts and date ranges after building each split; they are the first check
   when something looks wrong.
 - Prefer simple, explainable features over clever ones. Every top feature must be explainable in one
@@ -259,3 +289,50 @@ sentence-transformers, umap-learn, shap, psycopg. Pin versions in `requirements.
 4. Text similarity and clusters, then ablation
 5. Final train, `top500.csv` (**freeze by 8:00 AM Sunday**)
 6. SHAP reasons, predictions export, findings for slides
+---
+
+## 12. Implementation status and decisions (updated 2026-11-08, 00:50)
+
+Status: full pipeline implemented and run end to end. `ml/top500.csv` (v2) is a valid submission.
+
+### Decisions that refine the spec
+- **History cutoff per row** = Dec 31 of the year before publication (2024 rows: 2023-12-31,
+  2025 rows: 2024-12-31, scoreboard: 2025-12-31). Applies to vendor, CWE, cluster, KEV-similarity and
+  text-model features. Rates use CVEs published 2021 → cutoff.
+- **`text_lr_score`** is not fit on the split: for each cutoff, LR on Granite embeddings of all CVEs
+  published 2022 → cutoff, label = in KEV by cutoff (246 / 398 / 605 positives). Rows scored are all
+  published after the cutoff, so no out-of-fold step is needed.
+- **Embeddings** cover every CVE published since 2022 plus all KEV CVEs (235,076 texts).
+- **Clusters**: UMAP (15d, cosine) + HDBSCAN fit on a 40k sample, all CVEs assigned by 15-NN vote
+  (140 clusters, 37% noise). Names from c-TF-IDF keywords (LLM naming optional).
+- **`epss_pct`** = percentile within snapshot month among the split's rows (same rule for scoreboard).
+- **`days_before_snapshot`** (snapshot end − publish date, capped at 30): late-month CVEs often lack EPSS
+  (10 to 21% missing vs 1 to 3% early). Cap maps scoreboard June CVEs (July snapshot) to training range.
+- **LightGBM** with only ~40 train_A positives: depth-2 trees, `scale_pos_weight = sqrt(neg/pos)`,
+  L2 = 10, fixed 300 rounds, 5-seed bagging. Default params + full neg/pos weight + early stopping
+  memorised the positives (vendor features dropped hits@500 from 18 to 7).
+- **Selection** (logged in `outputs/selected_features.json`): exploit + vendor/keyword + text + cluster.
+  Caution group (CVSS, CWE) and `desc_itw_phrase` dropped: no gain of >= 2 hits@500 on valid.
+- Vendor display names: CNA UUIDs mapped to the vendor their descriptions name most (display only).
+
+### Results
+hits@500 on `valid` (52 positives): CVSS-first 8, EPSS-first 8, exploit-then-EPSS 18,
+LightGBM 1_exploit 17, +vendor/kw 18, **+text 20**, +cluster 20, compact LR 19, blend 18, text-first 13.
+
+Post-hoc check on the scoreboard (60 positives by 2026-11-04, `src/check_2026.py`, report only):
+CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), model v1 without text 9,
+**model v2 11**.
+
+### Findings so far (details in `ml/docs/findings.md`)
+- Base rate about 0.15%. 5 of 52 valid positives had no EPSS at snapshot (e.g. Chrome zero-day).
+- `desc_itw_phrase`: 24 valid CVEs, 5 positives (21%); trees cannot use it (too rare).
+- Highest-KEV-rate clusters: Oracle WebLogic, Cisco IOS/ASA, Chrome, Windows kernel EoP, Office,
+  Telerik deserialization, Ivanti Connect Secure, FortiOS.
+- train_final label horizons are 92 to 700 days vs 35 to 277 on the scoreboard; positives per month
+  look flat across horizons, so we kept the spec's train_final (alternative: train_A + valid stacked).
+
+### Open TODOs
+- Reasons: only show vendor rate when clearly above the prior; cluster slide table should use a
+  2022+ prior.
+- Decide on `desc_itw_phrase` (rule-based boost needs justification on valid).
+- Update `docs/findings.md` and `docs/columns_used.md` with the numbers above; run `export_tigerdata`.
