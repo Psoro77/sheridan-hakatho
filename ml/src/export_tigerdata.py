@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS vuln_clusters (
     kev_hits_train INTEGER,
     kev_rate_train DOUBLE PRECISION,
     n_scoreboard INTEGER,
-    lift_vs_prior DOUBLE PRECISION
+    lift_vs_prior DOUBLE PRECISION,
+    n_train INTEGER
 );
 """
 
