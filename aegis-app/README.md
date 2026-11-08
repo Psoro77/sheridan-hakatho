@@ -112,7 +112,7 @@ Sources: [Hugging Face supported models](https://huggingface.co/inference/models
 
 ## Evaluation disclosure
 
-Corrected 2025 disjoint-fold evaluation at scoreboard depth: 24/52 versus 15/52 for the exploit-then-EPSS baseline (1.6×). Recorded 2026 check: 19/60 versus 8/60 (2.375×, displayed as 2.4×). These are saved results, not a new evaluation. The 2026 key was inspected after multiple modeling rounds; exploitation-language features remain a disclosed leakage risk. See `../ml/docs/findings.md`.
+2025 out-of-time evaluation (disjoint folds V1 and V2, scored at scoreboard depth): the numbers shown in the UI are read from `../ml/outputs/metrics.json` and `../ml/outputs/rank_bands.csv` by `scripts/prepare-data.py`; nothing is hardcoded. These are saved results, not a new evaluation. Exploitation-language features remain a disclosed leakage risk. See `../ml/docs/findings.md`.
 
 ### Project-first overview and agent handoff
 

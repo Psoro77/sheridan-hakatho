@@ -15,7 +15,9 @@ try {
  await client.query(`INSERT INTO aegis_app.snapshot_months(month,total,selected)
  SELECT x->>'month',(x->>'count')::int,(x->>'selected')::int FROM jsonb_array_elements($1::jsonb) x
  ON CONFLICT(month) DO UPDATE SET total=EXCLUDED.total,selected=EXCLUDED.selected`,[JSON.stringify(data.months)]);
- const meta=Object.entries({source:data.source,metrics:data.metrics,validation:data.validation}).filter(([,value])=>value!==undefined);
+ const meta=Object.entries({source:data.source,validation:data.validation}).filter(([,value])=>value!==undefined);
+ // Remove metadata keys the snapshot no longer carries (e.g. the retired 'metrics' key).
+ await client.query('DELETE FROM aegis_app.metadata WHERE NOT (key = ANY($1))',[meta.map(([key])=>key)]);
  for (const [key,value] of meta) {
   await client.query('INSERT INTO aegis_app.metadata(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value',[key,JSON.stringify(value)]);
  }

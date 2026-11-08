@@ -37,9 +37,9 @@ export function createHandler(pool,{getConfig=loadConfig,generate=generateBriefi
    }
    if(path==='/api/aegis/intelligence'&&req.method==='GET'){
     if(pool){try{const [rows,months,metadata]=await Promise.all([pool.query('SELECT record FROM aegis_app.vulnerabilities ORDER BY model_rank'),pool.query('SELECT month,total as count,selected FROM aegis_app.snapshot_months ORDER BY month'),pool.query('SELECT key,value FROM aegis_app.metadata')]);if(!rows.rows.length)throw Error('empty');const meta=Object.fromEntries(metadata.rows.map(r=>[r.key,r.value]));
-     // validation/metrics come from the checked-in ML outputs, so fall back to the bundled snapshot
-     // when a database predates those metadata keys. Seeded values still win.
-     return send(res,200,{validation:fallback.validation,metrics:fallback.metrics,...meta,vulnerabilities:rows.rows.map(r=>withEvidence(r.record)),months:months.rows,storage:'tigerdata'});}catch{}}
+     // validation comes from the checked-in ML outputs, so fall back to the bundled snapshot
+     // when a database predates that metadata key. Seeded values still win.
+     return send(res,200,{validation:fallback.validation,...meta,vulnerabilities:rows.rows.map(r=>withEvidence(r.record)),months:months.rows,storage:'tigerdata'});}catch{}}
     return send(res,200,{...fallback,storage:'snapshot',warning:'TigerData is unavailable; showing the bundled snapshot.'});
    }
    if(path==='/api/aegis/workspace'&&req.method==='GET'){

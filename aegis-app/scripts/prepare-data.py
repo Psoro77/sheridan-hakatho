@@ -27,9 +27,8 @@ complete=attach_evidence(items,root,len(signals))
 validation=validation_summary(root,len(signals))
 assert len(items)==500 and len(set(ids))==500, 'Expected exactly 500 unique ranked CVEs'
 print(f'Model evidence: {complete}/500 generated reasons; 500/500 validation evidence')
-print(f"Validation: 2026 {validation['scoreboard2026']['model']}/{validation['scoreboard2026']['positives']} vs baselines "
-      f"{[b['hits'] for b in validation['scoreboard2026']['baselines']]}; "
-      f"2025 folds {validation['folds2025']['model']}/{validation['folds2025']['positives']} vs {validation['folds2025']['baseline']}")
-result={'vulnerabilities':sorted(items.values(),key=lambda x:x['rank']),'months':[{'month':m,'count':n,'selected':sum(x['snapshot']==m for x in items.values())} for m,n in sorted(months.items())],'metrics':json.loads((root/'ml/outputs/check_2026.json').read_text()),'validation':validation,'source':'IBM datathon dataset · November 2026 snapshot'}
+f=validation['folds2025']
+print(f"Validation: 2025 folds {f['model']}/{f['positives']} vs baselines {[b['hits'] for b in f['baselines']]}")
+result={'vulnerabilities':sorted(items.values(),key=lambda x:x['rank']),'months':[{'month':m,'count':n,'selected':sum(x['snapshot']==m for x in items.values())} for m,n in sorted(months.items())],'validation':validation,'source':'IBM datathon dataset · November 2026 snapshot'}
 (out/'intelligence.json').write_text(json.dumps(result,separators=(',',':')))
 print(f'Prepared {len(items)} real ranked CVEs; {len(signals)} scoreboard entries summarized')

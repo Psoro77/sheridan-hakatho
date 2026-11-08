@@ -15,7 +15,7 @@ test('a database seeded before the evidence work still serves validation and ran
  const poolFor=record=>({query:async(q)=>({rows:q.includes('aegis_app.vulnerabilities')?[{record}]:[]})});
  const filled=await request(createHandler(poolFor(stale),{getConfig:()=>config}),'/api/aegis/intelligence');
  assert.equal(filled.body.storage,'tigerdata');
- assert.ok(filled.body.validation.scoreboard2026.model>0,'validation falls back to the bundled snapshot');
+ assert.ok(filled.body.validation.folds2025.model>0,'validation falls back to the bundled snapshot');
  assert.equal(filled.body.vulnerabilities[0].modelEvidence.validation.band,top.modelEvidence.validation.band);
  const seeded=await request(createHandler(poolFor(own),{getConfig:()=>config}),'/api/aegis/intelligence');
  assert.equal(seeded.body.vulnerabilities[0].modelEvidence.status,'complete','a record carrying its own evidence wins');

@@ -24,35 +24,22 @@ def validation_summary(root, total):
     """Headline validation numbers, read from the ML artifacts so the UI never hardcodes a score."""
     bands = load_bands(root)
     metrics = json.loads((root/'ml/outputs/metrics.json').read_text())['results']
-    check = json.loads((root/'ml/outputs/check_2026.json').read_text())
     # Out-of-time folds V1 (2025-01..04) and V2 (2025-05..09), each scored at the scoreboard's depth.
     def folds_2025(key):
         return sum(v for k,v in metrics[key].items() if k.startswith(('V1@','V2@')))
-    positives_2026 = {check[key]['positives'] for _,key in BASELINES}
-    if len(positives_2026) != 1:
-        raise ValueError('Baselines disagree on the number of 2026 exploited CVEs')
     summary = {
         'universe': total, 'depth': 500,
-        'scoreboard2026': {
-            'positives': positives_2026.pop(),
-            'model': check['submitted_top500']['hits@500'],
-            'baselines': [{'name':name,'hits':check[key]['hits@500']} for name,key in BASELINES],
-        },
         'folds2025': {
             # rank_bands.csv partitions the whole 2025 validation set, so its hits sum to the positives.
             'positives': sum(int(b['valid_hits']) for b in bands),
             'model': folds_2025('model_selected'),
-            'baseline': folds_2025('exploit_then_epss'),
-            'baselineName': 'Exploit code, then EPSS',
+            'baselines': [{'name':name,'hits':folds_2025(key)} for name,key in BASELINES],
         },
         'bands': [{'band':b['band'],'hits':int(b['valid_hits']),'count':int(b['valid_n']),
                    'rate':float(b['valid_rate']),'lift':float(b['lift'])} for b in bands],
     }
-    s = summary['scoreboard2026']
-    if not 0 < s['model'] <= s['positives'] or any(not 0 <= b['hits'] <= s['positives'] for b in s['baselines']):
-        raise ValueError('2026 hit counts are outside the number of exploited CVEs')
     f = summary['folds2025']
-    if not 0 < f['model'] <= f['positives'] or not 0 <= f['baseline'] <= f['positives']:
+    if not 0 < f['model'] <= f['positives'] or any(not 0 <= b['hits'] <= f['positives'] for b in f['baselines']):
         raise ValueError('2025 fold hit counts are outside the number of exploited CVEs')
     return summary
 
