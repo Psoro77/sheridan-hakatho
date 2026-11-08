@@ -106,7 +106,7 @@ The database integration was verified with a TLS connection, 500-record read, 72
 
 The live backend currently runs locally. The prior Sites Worker build cannot connect directly to PostgreSQL through this Node companion. To host this integrated version, deploy the Node API on a TCP-capable server and configure an authenticated reverse proxy from the frontend; do not expose database credentials to the client. Bind beyond localhost only with `AEGIS_API_KEY`. The API requires that bearer key in that mode. Production also needs proper user/workspace authorization before expanding access beyond the private team demo. A public unauthenticated API is not provided.
 
-Entire workflow integration and Solana anchoring remain planned. Version-aware CPE matching, topology ingestion, and semantic search over embedding vectors remain separate work.
+Entire workflow integration remains planned. Solana anchoring is described below. Version-aware CPE matching, topology ingestion, and semantic search over embedding vectors remain separate work.
 
 Sources: [Hugging Face supported models](https://huggingface.co/inference/models), [chat completion API](https://huggingface.co/docs/inference-providers/tasks/chat-completion), [dedicated endpoints](https://huggingface.co/docs/inference-endpoints/guides/test_endpoint), [node-postgres TLS](https://node-postgres.com/features/ssl).
 
@@ -127,3 +127,30 @@ Reference: [GitHub Contents API](https://docs.github.com/en/rest/repos/contents)
 Overview sorts affected packages using `aegis-context-v1`, a transparent triage heuristic—not calibrated exploitation probability or fresh model inference. Each advisory gets severity points (critical 40, high 30, moderate/medium 20, low 10; unknown 30), declared exposure points (internal 10, public or unknown 20), and historical model points (rank #1 = 40 to #500 = 20). Missing model coverage gets a neutral 20, with an explicit Not scored label. Matching uses exact advisory IDs/CVE aliases against the saved top-500 ranking.
 
 The highest-scoring advisory drives the package score, avoiding mixing one advisory's severity with another's model rank. Scores 80+ mean Review first; 60–79 Review next; lower scores Scheduled review. These thresholds and weights are product triage conventions, not empirically validated risk thresholds. Unknown status receives no score; development dependencies get no discount. Equal scores sort by package key. Partial model coverage is visible. Both existing scans and new scans receive the current policy; persisted advisory observations remain unchanged when reading old scans. Priority context flows into Granite evidence, exported plans, and editor handoff prompts.
+
+## Solana anchoring (tamper-evident ranking)
+
+TigerData holds the ranked top 500, so anyone with database access could quietly change a rank. Aegis commits to the data on Solana so such a change is **visible**. This is tamper-evident, not tamper-proof: it detects edits, it does not prevent them. Only hashes go on-chain, never inventory, asset names or plans.
+
+What is anchored, in one memo transaction `aegis:v1:snapshot:<manifest sha256>` (manifest in [`public/data/anchor.json`](public/data/anchor.json)):
+
+- SHA-256 of `ml/top500.csv`, `ml/outputs/top500.csv`, `ml/outputs/predictions.parquet`, `ml/outputs/metrics.json`, `ml/models/final_meta.json`. Text files also carry an `lf` hash with CRLF normalized to LF, because Git on Windows rewrites line endings; a Linux or macOS clone matches `lf`.
+- A Merkle root over the 500 ranking records (leaf = SHA-256 of the record as JSON with sorted keys, leaves sorted by CVE id). Leaves are stored too, so a mismatch names the changed CVE.
+
+`GET /api/aegis/integrity` recomputes the leaves from TigerData (or the bundled snapshot), re-hashes the files, fetches the transaction and compares the memo. It returns `verified`, `mismatch` (with `mismatched` CVE ids and a `reason`), `unverifiable` (Solana RPC unreachable; never reported as verified) or `unanchored`. The UI shows it on Vulnerability intelligence, in each CVE briefing and under Connections.
+
+```sh
+npm run solana:keygen          # creates .solana/devnet-keypair.json (gitignored) and prints the address
+                               # devnet RPC airdrops are closed: fund the address at https://faucet.solana.com
+npm run anchor:snapshot        # sends the memo and writes public/data/anchor.json (commit it)
+node scripts/anchor-snapshot.mjs --dry-run   # recompute hashes only
+```
+
+Check it by hand: `git show HEAD:ml/top500.csv | sha256sum` equals `manifest.files["ml/top500.csv"].lf`; `sha256sum` of `anchor.json`'s canonical manifest is the memo; open the explorer link for `anchors[0].signature`.
+
+Limits:
+- The anchor proves the files existed in this form **from the anchor time** (Nov 8, 2026). It does not prove they predate the Nov 4 label date; the Git history and the Devpost submission time are the evidence for that.
+- Whoever holds the signing key can anchor a new manifest. Every anchor stays public on-chain and `anchors` in Git is append-only, so a later re-anchor is visible; the UI shows the first anchor time.
+- Rerunning `prepare-data.py` changes the records, so re-anchor afterwards (a new entry is appended).
+- Devnet is for the demo and has been reset in the past. Mainnet is the production path at a fraction of a cent per transaction (set `SOLANA_CLUSTER=mainnet-beta` and a funded key).
+- Defense-plan approvals are not anchored yet. The next step is hash-chaining `aegis_app.events` and anchoring the chain head.

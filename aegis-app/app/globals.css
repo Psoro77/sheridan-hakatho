@@ -1778,3 +1778,13 @@ div.disclosure p { margin-top: 0 }
 .rate-track i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #2d8a6d, #6fbfa0); min-width: 2px }
 .rate-track i.faint { background: #a9c2b6 }
 @media (max-width: 640px) { .proof-visuals { grid-template-columns: 1fr } }
+
+/* Solana anchoring */
+.summary-pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.summary-pills .pill { margin-left: 0 }
+.anchor-pill, .anchor-note { display: inline-flex; align-items: center; gap: 5px; text-decoration: none }
+.intelligence-summary .anchor-pill svg { color: currentColor }
+.anchor-note { margin: 4px 0 12px; padding: 6px 10px; border-radius: 8px; font-size: 12.5px }
+.anchor-note.teal { background: var(--accent-soft); color: var(--accent-ink) }
+.anchor-note.coral { background: var(--red-soft); color: var(--red) }
+.anchor-note.neutral { background: var(--surface-3); color: var(--ink-2) }
