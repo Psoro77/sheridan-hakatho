@@ -27,6 +27,17 @@ CREATE TABLE IF NOT EXISTS aegis_app.briefings (
  response jsonb NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Tickets filed in GitHub or Jira from the defense plan and defense paths (one per item and provider).
+CREATE TABLE IF NOT EXISTS aegis_app.tickets (
+ workspace_id text NOT NULL,
+ ticket_key text NOT NULL,
+ provider text NOT NULL,
+ external_key text NOT NULL,
+ url text NOT NULL,
+ title text NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY (workspace_id, ticket_key, provider)
+);
 CREATE TABLE IF NOT EXISTS aegis_app.events (
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  workspace_id text NOT NULL,

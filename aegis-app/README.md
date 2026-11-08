@@ -153,3 +153,38 @@ Limits:
 - Rerunning `prepare-data.py` changes the records, so re-anchor afterwards (a new entry is appended).
 - Devnet is for the demo and has been reset in the past. Mainnet is the production path at a fraction of a cent per transaction (set `SOLANA_CLUSTER=mainnet-beta` and a funded key).
 - Defense-plan approvals are not anchored yet. The next step is hash-chaining `aegis_app.events` and anchoring the chain head.
+
+## Ticket handoff: GitHub Issues or Jira
+
+A security team works out of a tracker, so Aegis files its outputs there instead of ending at a Markdown export.
+
+Each CVE queued in the **Defense plan** gets **Create GitHub issue** / **Create Jira ticket**. The ticket carries the tier (Fix now = top 100, This week = 101 to 500), the model's validation band and top drivers, exploit signals, the nearest past KEV entry, inventory exposure, the description, a remediation checklist, the dataset source links and, once anchored, the Solana transaction for the ranking snapshot.
+
+Ticket text is built on the server from the ranked record. The browser sends only a CVE id and the inventory. One ticket per item and provider: a second click returns the existing link. Filed tickets are stored in `aegis_app.tickets` (created on first use; also in `server/schema.sql`) with a `ticket_created` audit event. The plan export includes the ticket link.
+
+Add one of these to `.env.local` (server-only; no restart needed):
+
+```dotenv
+# GitHub Issues: fine-grained token with "Issues: read and write" on this one repository
+GITHUB_TOKEN=github_pat_...
+GITHUB_REPO=owner/security-tickets
+# GITHUB_API_URL=https://github.example.com/api/v3   # GitHub Enterprise Server
+
+# Jira Cloud: API token from id.atlassian.com/manage-profile/security/api-tokens
+JIRA_BASE_URL=https://your-site.atlassian.net
+JIRA_EMAIL=you@example.com
+JIRA_API_TOKEN=...
+JIRA_PROJECT_KEY=SEC
+# JIRA_ISSUE_TYPE=Task        # must exist in the project (Bug, Task, or your own type)
+
+# TICKET_PROVIDER=jira        # pick one when both are configured (default: GitHub)
+# TICKET_INCLUDE_ASSET_NAMES=true   # default: only counts (public/internal, highest criticality)
+```
+
+**Connections** runs a read-only check (the repository has issues enabled, or the Jira project exists) and shows whether a GitHub repository is public. Use a private repository: ticket text then stays visible only to your team. Asset names are left out of tickets unless `TICKET_INCLUDE_ASSET_NAMES=true`. GitHub labels (`aegis`, `fix-now`, `this-week`, `exploit-signals`, the CVE id) are created on first use when the token has write access. Dataset text has `@mentions` and `#123` references neutralized, so a CVE description cannot ping users or link issues.
+
+Without a configured tracker, the buttons open a **preview** of the exact ticket text (copy or download as Markdown). Nothing is sent, and the preview is labeled as not filed. The eye icon next to a live button shows the same preview before you file.
+
+Limits: ticket status is not synced back to Aegis (closing the issue does not mark the plan item reviewed), Jira priority and due date are left to the project's defaults because those fields vary per scheme, and there is no bulk filing.
+
+References: [GitHub create an issue](https://docs.github.com/en/rest/issues/issues#create-an-issue), [Jira Cloud create issue](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post), [Atlassian Document Format](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/).

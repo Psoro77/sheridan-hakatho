@@ -1753,3 +1753,22 @@ div.disclosure p { margin-top: 0 }
 .anchor-note.teal { background: var(--accent-soft); color: var(--accent-ink) }
 .anchor-note.coral { background: var(--red-soft); color: var(--red) }
 .anchor-note.neutral { background: var(--surface-3); color: var(--ink-2) }
+
+/* ==========================================================================
+   Ticket handoff (GitHub Issues / Jira)
+   ========================================================================== */
+
+.plan-actions, .ticket-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.ticket-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 12.5px; font-weight: 550; text-decoration: none; white-space: nowrap }
+.ticket-link:hover { text-decoration: underline }
+.ticket-preview { width: 720px }
+.ticket-preview h2 { font-size: 16px; line-height: 1.4 }
+.ticket-note { margin: 12px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--surface-3); font-size: 12.5px; line-height: 1.5; color: var(--ink-2) }
+.ticket-labels { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 }
+.ticket-preview pre { max-height: 46vh; overflow: auto; padding: 14px; border-radius: 8px; background: var(--surface-3); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-1, inherit) }
+.ticket-preview-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px }
+.ticket-preview-actions .button.primary { margin-left: auto }
+@media (max-width: 760px) {
+ .plan-bottom { flex-direction: column; align-items: stretch; gap: 10px }
+ .ticket-preview-actions .button.primary { margin-left: 0 }
+}

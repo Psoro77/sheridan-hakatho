@@ -45,7 +45,7 @@ export default defineConfig(async ({ command }) => {
 
   return {
     server: {
-      proxy: { "/api/aegis": { target: "http://127.0.0.1:5174", changeOrigin: true, proxyTimeout: 240000 } },
+      proxy: { "/api/aegis": { target: `http://127.0.0.1:${process.env.AEGIS_API_PORT || 5174}`, changeOrigin: true, proxyTimeout: 240000 } },
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }
         : {}),

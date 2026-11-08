@@ -31,5 +31,16 @@ export function loadConfig() {
     solanaCluster: env.SOLANA_CLUSTER || 'devnet',
     solanaRpcUrl: env.SOLANA_RPC_URL || '',
     solanaKeypairPath: env.SOLANA_KEYPAIR_PATH || fileURLToPath(new URL('../.solana/devnet-keypair.json', import.meta.url)),
+    // Ticketing: GitHub Issues or Jira Cloud. TICKET_PROVIDER picks one when both are set.
+    ticketProvider: (env.TICKET_PROVIDER || '').toLowerCase(),
+    ticketIncludeAssetNames: /^(1|true|yes)$/i.test(env.TICKET_INCLUDE_ASSET_NAMES || ''),
+    githubToken: env.GITHUB_TOKEN || '',
+    githubRepo: env.GITHUB_REPO || '',
+    githubApiUrl: env.GITHUB_API_URL || 'https://api.github.com',
+    jiraBaseUrl: env.JIRA_BASE_URL || '',
+    jiraEmail: env.JIRA_EMAIL || '',
+    jiraToken: env.JIRA_API_TOKEN || '',
+    jiraProject: env.JIRA_PROJECT_KEY || '',
+    jiraIssueType: env.JIRA_ISSUE_TYPE || 'Task',
   };
 }

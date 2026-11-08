@@ -5,6 +5,7 @@ import { generateBriefing, evidenceFor, evidenceHash, PublicError } from './gran
 import { dependencyRoutes } from './dependency-routes.mjs';
 import { integrityRoutes, loadAnchorFile } from './integrity-routes.mjs';
 import { ollamaStatus } from './ollama.mjs';
+import { ticketRoutes } from './ticketing.mjs';
 import { explainSchema, saveSchema } from './validation.mjs';
 const fallback=JSON.parse(readFileSync(new URL('../public/data/intelligence.json',import.meta.url),'utf8'));
 const cveIds=new Set(fallback.vulnerabilities.map(v=>v.id));
@@ -22,8 +23,14 @@ function authorized(req,config){
  if(req.headers.origin){try{const origin=new URL(req.headers.origin);if(!['localhost','127.0.0.1'].includes(origin.hostname))return false;}catch{return false;}}
  return true;
 }
-export function createHandler(pool,{getConfig=loadConfig,generate=generateBriefing,integrity={}}={}){
+async function findRecord(pool,id){
+ let record=fallback.vulnerabilities.find(v=>v.id===id);
+ if(pool){try{const result=await pool.query('SELECT record FROM aegis_app.vulnerabilities WHERE cve_id=$1',[id]);if(result.rows[0])record=result.rows[0].record;}catch{}}
+ return record?withEvidence(record):null;
+}
+export function createHandler(pool,{getConfig=loadConfig,generate=generateBriefing,integrity={},tickets={}}={}){
  const handleIntegrity=integrityRoutes(pool,{fallbackRecords:fallback.vulnerabilities,...integrity});
+ const ticketing=ticketRoutes(pool,{findRecord:id=>findRecord(pool,id),loadAnchor:integrity.loadAnchor||loadAnchorFile,...tickets});
  const handleDependencies=dependencyRoutes(pool,{modelRanks:Object.fromEntries(fallback.vulnerabilities.map(v=>[v.id,v.rank])),generate});
  const inFlight=new Map();let lastInference=0;let healthCache;
  return async function handler(req,res){
@@ -32,12 +39,14 @@ export function createHandler(pool,{getConfig=loadConfig,generate=generateBriefi
    if(!authorized(req,config))throw new PublicError(403,'FORBIDDEN','This API is restricted to the Aegis workspace.');
    if(path.startsWith('/api/aegis/dependencies/')){const result=await handleDependencies(path,req,config,body);if(result!==null)return send(res,200,result);}
    if(path==='/api/aegis/integrity'){const result=await handleIntegrity(path,req,config);if(result!==null)return send(res,200,result);}
+   if(path==='/api/aegis/tickets'){const result=await ticketing.handle(path,req,config,body);if(result!==null)return send(res,200,result);}
    if(path==='/api/aegis/status'&&req.method==='GET'){
     let db={connected:false,records:0,tls:false};
     if(pool){try{if(healthCache&&Date.now()-healthCache.at<10000)db=healthCache.value;else{const r=await pool.query('SELECT (SELECT count(*) FROM aegis_app.vulnerabilities)::int as records,(SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()) as tls');db={connected:true,...r.rows[0]};healthCache={at:Date.now(),value:db};}}catch{}}
     const granite=config.graniteProvider==='ollama'?await ollamaStatus(config):{configured:!!config.hfToken,model:config.hfModel,provider:'huggingface',mode:config.hfEndpoint?'dedicated':'shared-provider'};
     let anchor=null;try{anchor=(integrity.loadAnchor||loadAnchorFile)();}catch{}
-    return send(res,200,{database:{...db,configured:!!pool},granite,workspace:config.workspaceId,solana:{anchored:!!anchor?.anchors?.length,cluster:anchor?.cluster||config.solanaCluster}});
+    const ticketStatus=await ticketing.status(config);
+    return send(res,200,{database:{...db,configured:!!pool},granite,workspace:config.workspaceId,solana:{anchored:!!anchor?.anchors?.length,cluster:anchor?.cluster||config.solanaCluster},ticketing:ticketStatus});
    }
    if(path==='/api/aegis/intelligence'&&req.method==='GET'){
     if(pool){try{const [rows,months,metadata]=await Promise.all([pool.query('SELECT record FROM aegis_app.vulnerabilities ORDER BY model_rank'),pool.query('SELECT month,total as count,selected FROM aegis_app.snapshot_months ORDER BY month'),pool.query('SELECT key,value FROM aegis_app.metadata')]);if(!rows.rows.length)throw Error('empty');const meta=Object.fromEntries(metadata.rows.map(r=>[r.key,r.value]));
