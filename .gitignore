@@ -9,3 +9,6 @@ ml/data/
 ml/models/
 .env
 !ml/outputs/*.parquet
+
+# Local service credentials
+*-credentials.txt
