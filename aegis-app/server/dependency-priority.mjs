@@ -1,5 +1,22 @@
 // A review-order heuristic, not a calibrated probability or fresh model inference.
 const severityPoints={CRITICAL:40,HIGH:30,MODERATE:20,MEDIUM:20,LOW:10};
+/**
+ * Project-level roll-up of the package scores. Driven by the worst finding rather than an
+ * average, so one critical dependency is not diluted by hundreds of clean ones.
+ * A triage indicator, not a probability of compromise.
+ */
+export function projectRisk(packages,report){
+ const affected=packages.filter(p=>p.status==='affected');
+ const unchecked=packages.filter(p=>p.status==='unknown').length+(report.skippedCount||0);
+ const peak=affected.reduce((worst,p)=>Math.max(worst,p.priority?.score||0),0);
+ const breadth=Math.round(100*Math.min(1,affected.length/25));
+ const unresolved=affected.length?Math.round(100*affected.filter(p=>!p.upgrade).length/affected.length):0;
+ const score=affected.length?Math.round(.6*peak+.25*breadth+.15*unresolved):0;
+ const band=!affected.length?(unchecked?'Not established':'None observed')
+  :score>=80?'High':score>=60?'Elevated':score>=35?'Moderate':'Low';
+ return {version:'aegis-risk-v1',score,band,peak,breadth,unresolved,affected:affected.length,unchecked,
+  method:'0.6 × highest package priority, 0.25 × breadth (saturating at 25 affected packages), 0.15 × share of affected packages with no verified upgrade.'};
+}
 export function prioritizeReport(report,modelRanks){
  if(!report)return report;
  const exposurePoints=report.exposure==='Internal'?10:20;
@@ -19,5 +36,5 @@ export function prioritizeReport(report,modelRanks){
   return group(b)-group(a)||(b.priority?.score??0)-(a.priority?.score??0)||a.key.localeCompare(b.key);
  });
  const affected=packages.filter(p=>p.status==='affected');
- return {...report,packages,prioritization:{version:'aegis-context-v1',method:'Severity + exposure + historical model rank; highest-priority advisory drives each package.',modelSource:'Saved Aegis top-500 ranking; exact CVE/advisory alias matches only',matchedPackages:affected.filter(p=>p.priority?.matchedAdvisories>0).length,unscoredPackages:affected.filter(p=>!p.priority?.matchedAdvisories).length,reviewFirst:affected.filter(p=>p.priority?.score>=80).length}};
+ return {...report,packages,prioritization:{version:'aegis-context-v1',method:'Severity + exposure + historical model rank; highest-priority advisory drives each package.',modelSource:'Saved Aegis top-500 ranking; exact CVE/advisory alias matches only',matchedPackages:affected.filter(p=>p.priority?.matchedAdvisories>0).length,unscoredPackages:affected.filter(p=>!p.priority?.matchedAdvisories).length,reviewFirst:affected.filter(p=>p.priority?.score>=80).length,risk:projectRisk(packages,report)}};
 }

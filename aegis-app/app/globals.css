@@ -330,6 +330,7 @@ select {
    ========================================================================== */
 
 .table-wrap { overflow: auto }
+.table-wrap.dependency-table { overflow: visible }
 table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap }
 th {
  padding: 10px 16px;
@@ -358,6 +359,8 @@ td > svg { color: var(--ink-4) }
  display: flex;
  justify-content: space-between;
  align-items: center;
+ flex-wrap: wrap;
+ gap: 10px 20px;
  padding: 12px 20px;
  border-top: 1px solid var(--line-soft);
  font-size: 12.5px;
@@ -676,34 +679,21 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 }
 .software-title h2 { font-size: 19px; font-weight: 600 }
 .software-title p { margin-top: 2px; font-size: 13px; color: var(--ink-3) }
+.provenance { display: flex; align-items: center; flex-wrap: wrap; gap: 8px }
+.provenance .pill { margin-left: 2px }
 .software-actions { display: flex; gap: 8px; flex-shrink: 0 }
-
-/* Source / timestamp / coverage, one quiet line. */
-.scan-results-heading {
- display: flex;
- justify-content: space-between;
- align-items: center;
- gap: 12px;
- padding: 0 20px 14px;
- font-size: 12.5px;
- color: var(--ink-3);
-}
-.scan-results-heading > span:first-child { display: flex; align-items: center; gap: 7px; min-width: 0 }
-.scan-results-heading svg { color: var(--ink-4); flex-shrink: 0 }
 
 /* Compact metric strip — replaces the ring, tallies and priority panel. */
 .exposure-summary {
  display: grid;
- grid-template-columns: repeat(4, 1fr);
- border-top: 1px solid var(--line-soft);
- border-bottom: 1px solid var(--line-soft);
- background: var(--surface-2);
+ grid-column: 2 / -1;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 20px;
 }
-.metric {
- padding: 14px 20px;
- border-right: 1px solid var(--line-soft);
-}
-.metric:last-child { border-right: 0 }
+.risk-panel:not(:has(.risk-dial)) .exposure-summary { grid-column: 1 / -1 }
+.software-header { border-bottom: 0 }
+.dependency-controls { padding-top: 14px }
+.metric { min-width: 0 }
 .metric > span {
  display: block;
  font-size: 11.5px;
@@ -714,7 +704,7 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 }
 .metric > strong {
  display: block;
- margin-top: 6px;
+ margin-top: 4px;
  font-size: 26px;
  font-weight: 600;
  line-height: 1.1;
@@ -722,74 +712,125 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
  font-variant-numeric: tabular-nums;
 }
 .metric > small { margin-top: 3px; font-size: 12px; color: var(--ink-3) }
-.metric.is-risk > strong { color: var(--red) }
 .metric.is-good > strong { color: var(--accent) }
-.metric-total { font-size: 16px; font-weight: 500; color: var(--ink-4) }
 
-.coverage-bar {
- display: flex;
- height: 4px;
- background: var(--line-soft);
+/* ----- Tooltips -----------------------------------------------------------
+   Definitions that do not deserve a line of their own. Hover or keyboard focus. */
+.info { position: relative; display: inline-flex; vertical-align: middle; margin-left: 5px }
+.info-trigger {
+ display: inline-flex;
+ padding: 2px;
+ border-radius: 50%;
+ color: var(--ink-4);
+ transition: color .15s;
 }
-.coverage-bar > i { display: block; height: 100% }
-.coverage-bar .seg-affected { background: var(--red) }
-.coverage-bar .seg-unknown { background: var(--orange) }
-.coverage-bar .seg-clear { background: var(--accent); opacity: .35 }
-
-/* Priority explainer, demoted to a single line + details. */
-.priority-explainer { padding: 12px 20px; border-bottom: 1px solid var(--line-soft) }
-.priority-overview {
- display: flex;
- align-items: center;
- gap: 10px;
- font-size: 12.5px;
- color: var(--ink-3);
- flex-wrap: wrap;
-}
-.priority-overview b { font-weight: 550; color: var(--ink) }
-.priority-explainer .disclosure { margin: 0 0 0 auto }
-
-/* Dependency footprint — collapsible, compact tiles. */
-.package-map { padding: 0 20px; border-bottom: 1px solid var(--line-soft) }
-.package-map summary {
- display: flex;
- align-items: center;
- gap: 10px;
- padding: 11px 0;
- cursor: pointer;
- list-style: none;
- font-size: 12.5px;
- font-weight: 500;
- color: var(--ink-2);
-}
-.package-map summary::-webkit-details-marker { display: none }
-.package-map summary > span:last-child {
- display: flex;
- align-items: center;
- gap: 6px;
- margin-left: auto;
+.info-trigger:hover { color: var(--ink-2) }
+.info-bubble {
+ position: absolute;
+ top: calc(100% + 8px);
+ left: -8px;
+ z-index: 60;
+ width: max-content;
+ max-width: 290px;
+ padding: 10px 12px;
+ background: var(--chrome);
+ color: #e8e8ed;
+ border-radius: var(--r-sm);
+ box-shadow: var(--shadow-2);
+ font-size: 12px;
  font-weight: 400;
+ line-height: 1.55;
+ letter-spacing: 0;
+ text-transform: none;
+ white-space: normal;
+ opacity: 0;
+ visibility: hidden;
+ transform: translateY(-3px);
+ transition: opacity .12s, transform .12s, visibility .12s;
+}
+.info-bubble b { font-weight: 600; color: #fff }
+.info:hover .info-bubble,
+.info-trigger:focus-visible ~ .info-bubble {
+ opacity: 1;
+ visibility: visible;
+ transform: translateY(0);
+}
+
+/* ----- Project risk score -------------------------------------------------
+   One band colour drives the gauge, the headline and nothing else. */
+.summary-zone {
+ background: var(--surface-3);
+ border-top: 1px solid var(--line);
+ border-bottom: 1px solid var(--line);
+}
+
+.risk-panel {
+ --band: var(--ink-3);
+ --band-from: var(--ink-4);
+ display: grid;
+ grid-template-columns: repeat(4, 1fr);
+ align-items: center;
+ gap: 0 20px;
+ padding: 20px;
+}
+.risk-panel.band-high { --band: var(--red); --band-from: #e2574c }
+.risk-panel.band-elevated { --band: var(--orange); --band-from: #e0923a }
+.risk-panel.band-moderate { --band: var(--orange); --band-from: #e0a957 }
+.risk-panel.band-low { --band: var(--accent); --band-from: #3bb38c }
+.risk-panel.band-none-observed { --band: var(--accent); --band-from: #3bb38c }
+.risk-panel.band-not-established { --band: var(--ink-3); --band-from: #b8b8be }
+
+/* Ring: 270° track, gradient sweep, knob at the value. */
+.score-ring { position: relative; width: 100% }
+.score-ring svg { display: block; width: 100%; height: auto; overflow: visible }
+.ring-track { fill: none; stroke: var(--band); stroke-width: 9; stroke-linecap: round; opacity: .16 }
+.ring-value { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .6s ease }
+.ring-knob { fill: var(--band); stroke: var(--surface-3); stroke-width: 2.5 }
+.ring-center {
+ position: absolute;
+ inset: 0;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ line-height: 1.1;
+}
+
+.risk-dial { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 146px }
+.risk-dial .score-ring strong {
+ font-size: 32px;
+ font-weight: 600;
+ letter-spacing: -.04em;
+ font-variant-numeric: tabular-nums;
+ color: var(--band);
+}
+.risk-dial .score-ring small {
+ display: flex;
+ align-items: center;
+ margin-top: 4px;
+ font-size: 12px;
  color: var(--ink-3);
 }
-.package-map i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-left: 6px }
-.affected-dot { background: var(--red) }
-.clear-dot { background: var(--accent-line) }
-.unknown-dot { background: var(--orange) }
-.package-tiles { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding: 2px 0 14px }
-.package-tile {
- width: 11px;
- height: 11px;
- border-radius: 2px;
- background: var(--accent-line);
- transition: transform .12s, box-shadow .12s;
+.risk-band {
+ position: relative;
+ margin-top: -12px;
+ padding: 4px 12px;
+ background: var(--band);
+ border-radius: var(--r-pill);
+ color: #fff;
+ font-size: 12px;
+ font-weight: 600;
 }
-.package-tile.affected { background: var(--red) }
-.package-tile.unknown { background: var(--orange) }
-.package-tile:hover, .package-tile.selected {
- transform: scale(1.35);
- box-shadow: 0 0 0 1.5px var(--ink);
-}
-.package-tiles > span { margin-left: 4px; font-size: 11.5px; color: var(--ink-3) }
+
+/* Severity mix of the distinct advisories behind the count. */
+.sev-bar { display: flex; gap: 2px; height: 5px; margin: 8px 0 6px }
+.sev-bar > i { display: block; height: 100%; border-radius: 2px }
+.sev-critical { background: var(--red) }
+.sev-high { background: #d4694f }
+.sev-moderate { background: var(--orange) }
+.sev-low { background: #c9a227 }
+.sev-unknown { background: var(--ink-4) }
+.metric-total { font-size: 16px; font-weight: 500; color: var(--ink-4) }
 
 .dependency-controls {
  display: flex;
@@ -828,72 +869,113 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 .dependency-table td:first-child { box-shadow: inset 2px 0 0 transparent }
 .dependency-table .selected-row td:first-child { box-shadow: inset 2px 0 0 var(--accent) }
 
+.priority-flag { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500 }
+.priority-flag i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-4); flex-shrink: 0 }
+.p-first { color: var(--red); font-weight: 550 }
+.p-first i { background: var(--red) }
+.p-next i { background: var(--orange) }
+
 .id-button { font-size: 13px; font-weight: 550; padding: 0; text-align: left }
 .id-button:hover { color: var(--accent) }
 
-/* Package investigation */
-.package-investigation { border-top: 1px solid var(--line); background: var(--surface-2) }
-.investigation-heading {
- position: sticky;
- top: 56px;
- z-index: 10;
- display: flex;
- align-items: center;
- gap: 14px;
- padding: 14px 20px;
- background: rgba(250, 250, 250, .86);
- backdrop-filter: saturate(180%) blur(16px);
- border-bottom: 1px solid var(--line);
+/* Compact rows: one line each, detail lives in the side sheet. */
+.dependency-table td { padding: 8px 16px }
+.dependency-table td:first-child { padding-left: 20px }
+.dependency-table b { font-weight: 550 }
+.tag {
+ display: inline-block;
+ margin-left: 7px;
+ padding: 1px 5px;
+ background: var(--surface-3);
+ border-radius: var(--r-xs);
+ font-size: 10.5px;
+ font-weight: 550;
+ letter-spacing: .02em;
+ color: var(--ink-3);
+ vertical-align: 1px;
 }
-.investigation-heading h3 { font-size: 18px; font-weight: 600 }
-.investigation-heading h3 > span {
+.tag.warn { background: var(--orange-soft); color: var(--orange) }
+
+.pagination > .disclosure { margin: 0; margin-right: auto }
+.page-controls { display: flex; align-items: center; gap: 6px }
+.page-controls .icon-button:disabled { opacity: .3; cursor: default }
+.page-controls .icon-button:disabled:hover { background: none }
+
+/* Fix-all handoff, presented as a dialog. */
+.agent-modal {
+ width: 560px;
+ max-width: calc(100% - 32px);
+ max-height: 88vh;
+ overflow: auto;
+ padding: 22px 24px;
+ background: var(--surface);
+ border-radius: var(--r-lg);
+ box-shadow: var(--shadow-3);
+}
+.agent-modal .agent-handoff { margin: 0; padding: 0; background: none; border: 0 }
+.agent-modal .agent-handoff-top h4 { font-size: 17px }
+
+/* Package side sheet */
+.side-sheet {
+ width: 560px;
+ max-width: 100%;
+ height: 100%;
+ padding: 20px 24px 32px;
+ overflow: auto;
+ background: var(--surface);
+ box-shadow: var(--shadow-3);
+}
+.sheet-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px }
+.sheet-top .eyebrow { margin-bottom: 3px }
+.sheet-top h3 { font-size: 20px; font-weight: 600 }
+.sheet-top h3 > span {
  margin-left: 8px;
  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
- font-size: 13px;
+ font-size: 14px;
  font-weight: 400;
  color: var(--ink-3);
 }
-.investigation-heading .eyebrow { margin-bottom: 3px }
-
-/* The two AI actions, promoted to the top of the package view. */
-.investigation-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0 }
-.agent-stack { display: inline-flex; align-items: center; gap: 5px; margin-right: 1px }
-.investigation-actions .button svg { color: inherit }
-
-.package-investigation > .error-box { margin: 16px 20px 0 }
-.package-investigation > .dependency-ai { margin-top: 16px }
-
-.investigation-grid {
- display: grid;
- grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
- gap: 20px;
- padding: 20px;
+.sheet-meta {
+ display: flex;
+ flex-wrap: wrap;
+ align-items: center;
+ gap: 8px;
+ margin: 12px 0 16px;
+ font-size: 12.5px;
+ color: var(--ink-3);
 }
-.investigation-grid h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px }
-.investigation-note { margin-bottom: 14px; font-size: 13px; color: var(--ink-3) }
+.sheet-meta > span:not(.pill) { display: flex; align-items: center; gap: 8px }
+.sheet-meta > span:not(.pill):not(:last-child)::after { content: '·'; color: var(--ink-4) }
+.sheet-actions { display: flex; align-items: center; gap: 10px; margin-bottom: 18px }
+.sheet-actions small { font-size: 11.5px; color: var(--ink-4) }
+.side-sheet h4 { margin: 22px 0 6px; font-size: 14px; font-weight: 600 }
+.side-sheet > .dependency-ai { margin: 0 0 18px }
+.side-sheet .error-box { margin-bottom: 16px }
 
 .priority-reasons {
- margin-bottom: 22px;
- padding: 16px;
- background: var(--surface);
+ margin-bottom: 18px;
+ padding: 14px;
+ background: var(--surface-2);
  border: 1px solid var(--line);
  border-radius: var(--r);
 }
-.priority-reasons > strong { font-size: 17px; font-weight: 600 }
+.priority-reasons > strong { display: flex; align-items: center; font-size: 16px; font-weight: 600 }
 .priority-reasons > p { margin-top: 2px; font-size: 12.5px; color: var(--ink-3) }
-.priority-factors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 10px }
+.priority-factors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 8px }
 .priority-factors > span {
  display: flex;
  flex-direction: column;
- gap: 2px;
+ gap: 1px;
  padding-left: 10px;
  border-left: 2px solid var(--line);
  font-size: 12px;
  color: var(--ink-3);
 }
-.priority-factors b { font-size: 17px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums }
+.priority-factors b { font-size: 16px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums }
 .priority-factors small { font-size: 11.5px; line-height: 1.4; color: var(--ink-3) }
 .priority-reasons > small { font-size: 11.5px; color: var(--ink-4) }
+
+.investigation-note { margin-bottom: 12px; font-size: 12.5px; line-height: 1.55; color: var(--ink-3) }
 
 .advisory-card {
  margin-bottom: 10px;
@@ -927,25 +1009,7 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 .advisory-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px }
 .fixed-versions { margin-top: 10px; font-size: 12px; color: var(--ink-3) }
 .fixed-versions b { font-weight: 550; color: var(--ink-2) }
-.model-match, .model-unscored { display: block; margin-top: 6px; font-size: 11.5px; color: var(--ink-4) }
-.model-match { color: var(--accent) }
-
-.fix-card {
- align-self: start;
- position: sticky;
- top: 124px;
- padding: 18px;
- background: var(--surface);
- border: 1px solid var(--line);
- border-radius: var(--r);
-}
-.fix-card > h4 { font-size: 16px; font-weight: 600; line-height: 1.35 }
-.fix-card > p { margin: 6px 0 14px; font-size: 12.5px; color: var(--ink-3); line-height: 1.55 }
-.fix-card ol { margin: 0; padding-left: 17px; list-style: decimal; color: var(--ink-4) }
-.fix-card li { margin-bottom: 12px; padding-left: 2px }
-.fix-card li > b { font-size: 13px; font-weight: 550; color: var(--ink) }
-.fix-card li > p { margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: var(--ink-3) }
-.fix-card > small { margin-top: 10px; font-size: 11.5px; line-height: 1.5; color: var(--ink-4) }
+.model-match { display: block; margin-top: 6px; font-size: 11.5px; color: var(--accent) }
 
 .upgrade-warning {
  display: flex;
@@ -981,7 +1045,7 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
  display: flex;
  align-items: center;
  gap: 12px;
- margin: 20px;
+ margin: 0 0 16px;
  padding: 16px;
  background: var(--accent-soft);
  border-radius: var(--r);
@@ -999,19 +1063,6 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
  color: var(--accent-ink);
  font-size: 13px;
 }
-
-.scan-footnote {
- display: flex;
- align-items: flex-start;
- gap: 8px;
- padding: 11px 20px;
- border-top: 1px solid var(--line-soft);
- background: var(--surface-2);
- font-size: 12px;
- color: var(--ink-3);
- line-height: 1.55;
-}
-.scan-footnote svg { flex-shrink: 0; margin-top: 2px; color: var(--ink-4) }
 
 .software-panel > .error-box { margin: 0 20px 16px }
 .skipped-details {
@@ -1115,7 +1166,6 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 .scan-options > small { margin-top: 8px; font-size: 11.5px; color: var(--ink-4) }
 
 /* Agent handoff */
-.investigation-handoff { padding: 16px 20px 0; max-width: 620px }
 .agent-handoff-top { display: flex; align-items: center; justify-content: space-between; gap: 10px }
 .agent-handoff-actions { display: flex; gap: 8px; align-items: center }
 .agent-handoff-actions .button { flex: 1 }
@@ -1228,22 +1278,21 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
 }
 
 .dependency-ai {
- margin: 0 20px 20px;
+ margin: 0 0 18px;
  padding: 18px;
  background: var(--surface);
  border: 1px solid var(--accent-line);
  border-radius: var(--r);
 }
-.dependency-ai > p, .dependency-ai-columns p, .dependency-ai li {
+.dependency-ai p, .dependency-ai li {
  font-size: 13px;
  line-height: 1.65;
  color: var(--ink-2);
  white-space: pre-line;
 }
 .dependency-ai h4 { margin: 16px 0 6px; font-size: 13.5px; font-weight: 600; color: var(--ink) }
-.dependency-ai-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px }
-.dependency-ai-columns b { font-size: 13px; font-weight: 600; color: var(--ink) }
-.dependency-ai-columns > div > div { margin-bottom: 10px }
+.dependency-ai b { font-size: 13px; font-weight: 600; color: var(--ink) }
+.dependency-ai > div { margin-bottom: 10px }
 .dependency-ai ul { margin: 0; padding-left: 17px; list-style: disc }
 .dependency-ai > small { margin-top: 14px; font-size: 11.5px; line-height: 1.55; color: var(--ink-4) }
 
@@ -1324,80 +1373,6 @@ footer i { width: 1px; height: 10px; background: var(--line-strong) }
  color: var(--ink-2);
 }
 .asset-name b { font-weight: 550 }
-
-/* ==========================================================================
-   Defense paths
-   ========================================================================== */
-
-.simulation-label { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; font-size: 12.5px; color: var(--ink-3) }
-.path-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px }
-.path-flow { display: flex; align-items: center; justify-content: center; padding: 36px 16px; min-height: 240px }
-.path-stage { display: flex; align-items: center; min-width: 0 }
-.path-node {
- display: flex;
- flex-direction: column;
- align-items: center;
- justify-content: center;
- width: 134px;
- min-height: 132px;
- padding: 16px 10px;
- background: var(--surface-2);
- border: 1px solid var(--line);
- border-radius: var(--r);
- text-align: center;
- color: var(--ink-3);
- transition: .25s;
-}
-.path-node > b { margin: 10px 0 2px; font-size: 13px; font-weight: 550; color: var(--ink) }
-.path-node > small { font-size: 11.5px; color: var(--ink-3) }
-.node-status { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 10px; font-size: 11px; color: var(--orange) }
-.node-status.safe { color: var(--accent) }
-.path-node.protected { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent) }
-.path-connector { display: flex; justify-content: center; width: 34px; color: var(--ink-4) }
-.path-connector.blocked { color: var(--accent) }
-.path-result {
- display: flex;
- gap: 12px;
- margin: 0 20px 20px;
- padding: 16px;
- background: var(--surface-2);
- border: 1px solid var(--line);
- border-radius: var(--r);
- color: var(--ink-3);
-}
-.path-result svg { flex-shrink: 0; color: var(--accent) }
-.path-result h3 { font-size: 14px; font-weight: 600; color: var(--ink) }
-.path-result p { margin-top: 5px; font-size: 12.5px; line-height: 1.6 }
-
-.control-panel { padding: 18px 20px }
-.control-panel > p { margin: 4px 0 8px; font-size: 12.5px; color: var(--ink-3) }
-.control-toggle {
- display: flex;
- align-items: center;
- gap: 12px;
- width: 100%;
- padding: 14px 0;
- border-top: 1px solid var(--line-soft);
- text-align: left;
-}
-.control-toggle > svg { flex-shrink: 0; color: var(--ink-3) }
-.control-toggle b { font-size: 13px; font-weight: 550 }
-.control-toggle small { margin-top: 2px; font-size: 12px; line-height: 1.45; color: var(--ink-3) }
-.control-toggle.enabled > svg { color: var(--accent) }
-.switch {
- flex-shrink: 0;
- margin-left: auto;
- width: 34px;
- height: 20px;
- padding: 2px;
- background: var(--line-strong);
- border-radius: var(--r-pill);
- transition: background .2s;
-}
-.switch i { display: block; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: var(--shadow-1); transition: transform .2s }
-.enabled .switch { background: var(--accent) }
-.enabled .switch i { transform: translateX(14px) }
-.control-panel > .text-button { margin-top: 14px }
 
 /* ==========================================================================
    Defense plan
@@ -1662,20 +1637,10 @@ div.disclosure p { margin-top: 0 }
 
 @media (max-width: 1180px) {
  :root { --sidebar-w: 216px; --gutter: 22px }
- .investigation-grid { grid-template-columns: 1fr }
- .fix-card { position: static }
- .path-layout { grid-template-columns: 1fr }
- .control-panel { display: flex; flex-wrap: wrap; gap: 14px }
- .control-panel > h2, .control-panel > p { width: 100% }
- .control-toggle { flex: 1; min-width: 200px }
- .control-panel > .text-button { width: 100% }
 }
 
 @media (max-width: 960px) {
- .exposure-summary { grid-template-columns: repeat(2, 1fr) }
- .metric:nth-child(2) { border-right: 0 }
- .metric:nth-child(n+3) { border-top: 1px solid var(--line-soft) }
- .dependency-ai-columns { grid-template-columns: 1fr; gap: 0 }
+ .risk-panel { grid-template-columns: 1fr; justify-items: center; gap: 16px }
  .priority-factors { grid-template-columns: 1fr }
  .plan-steps { grid-template-columns: 1fr; gap: 14px }
  .import-choices { grid-template-columns: 1fr }
@@ -1695,18 +1660,18 @@ div.disclosure p { margin-top: 0 }
  .page-heading { flex-direction: column; align-items: flex-start; gap: 12px }
  .software-header { flex-direction: column; align-items: flex-start }
  .software-actions { width: 100% }
- .investigation-heading { position: static; flex-wrap: wrap }
- .investigation-actions { width: 100%; margin-left: 0 }
- .investigation-actions .button { flex: 1 }
- .investigation-grid, .dependency-controls, .scan-results-heading { padding-left: 16px; padding-right: 16px }
+ .side-sheet { padding: 18px 16px 28px }
+ .sheet-actions { flex-wrap: wrap }
+ .priority-factors { grid-template-columns: 1fr }
+ .dependency-controls { padding-left: 16px; padding-right: 16px }
+ .table-wrap.dependency-table { overflow-x: auto }
+ .info-bubble { max-width: 230px }
  .dependency-controls { flex-wrap: wrap }
  .dependency-controls .search { max-width: none; min-width: 100% }
  .table-controls { flex-wrap: wrap }
  .search { min-width: 100% }
+ .risk-panel { grid-template-columns: 1fr; gap: 14px }
  .plan-summary { flex-wrap: wrap; gap: 16px }
- .path-flow { overflow: auto; justify-content: flex-start; padding: 24px 16px }
- .path-stage { flex-shrink: 0 }
- .path-node { width: 112px }
  .detail-drawer { padding: 18px 18px 0 }
  .drawer-action { flex-wrap: wrap }
  .detail-factors { grid-template-columns: 1fr }

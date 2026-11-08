@@ -25,7 +25,6 @@ Includes all 500 ranked CVEs, descriptions, available CVSS, snapshot exploit fla
 - Vulnerability intelligence: search, filters, CSV export, evidence drawer, add to plan.
 - Inventory: CSV/JSON import with validation, editable exposure and criticality, product-name candidate matches. A local working copy is retained; Save workspace persists it to TigerData.
 - Contextual priority: rank percentile × normalized severity × exposure × criticality. Public/internal exposure weights are 1/0.45; high/medium/low criticality weights are 1/0.75/0.5. Missing severity uses a disclosed 0.5 fallback. My inventory sorts by this index. It is not a calibrated probability or a confirmed vulnerability match.
-- Defense paths: illustrative control simulation, no exploitation or live network scanning.
 - Defense plan: queue, evidence-review state, Markdown export, browser working copy, and TigerData persistence.
 
 ## Installed npm software assessment
