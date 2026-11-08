@@ -2,7 +2,7 @@
 // Solana memo recorded in public/data/anchor.json. RPC failure reports `unverifiable`, never `verified`.
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { compareRecords, explorerUrl, fetchMemo as fetchMemoDefault, hashFile, memoText } from './anchor.mjs';
+import { compareRecords, explorerUrl, fetchMemo as fetchMemoDefault, fileMatches, memoText } from './anchor.mjs';
 
 const anchorPath = new URL('../public/data/anchor.json', import.meta.url);
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -10,7 +10,7 @@ export const loadAnchorFile = () => existsSync(anchorPath) ? JSON.parse(readFile
 function checkFiles(files) {
   return Object.fromEntries(Object.entries(files || {}).map(([path, hash]) => {
     const full = repoRoot + path;
-    return [path, existsSync(full) ? (hashFile(full) === hash ? 'match' : 'changed') : 'missing'];
+    return [path, existsSync(full) ? (fileMatches(full, hash) ? 'match' : 'changed') : 'missing'];
   }));
 }
 
