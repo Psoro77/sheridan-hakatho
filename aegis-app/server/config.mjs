@@ -1,0 +1,32 @@
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
+
+export const appRoot = fileURLToPath(new URL('../', import.meta.url));
+export function loadConfig() {
+  const envFile = new URL('../.env.local', import.meta.url);
+  const local = existsSync(envFile) ? parseEnv(readFileSync(envFile,'utf8')) : {};
+  const env = { ...process.env, ...local };
+  let databaseUrl = env.TIGERDATA_URL || '';
+  if (!databaseUrl) {
+    const credentialPath = env.TIGERDATA_CREDENTIALS_FILE || fileURLToPath(new URL('../../tiger-cloud-db-11853-credentials.txt', import.meta.url));
+    if (existsSync(credentialPath)) {
+      const text = readFileSync(credentialPath, 'utf8');
+      databaseUrl = text.match(/postgres(?:ql)?:\/\/[^\s"'<>]+/)?.[0] || '';
+    }
+  }
+  return {
+    databaseUrl,
+    graniteProvider: env.GRANITE_PROVIDER || 'huggingface',
+    ollamaUrl: env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+    ollamaModel: env.OLLAMA_MODEL || 'granite4:latest',
+    hfToken: env.HF_TOKEN || env.HUGGINGFACEHUB_API_TOKEN || '',
+    hfEndpoint: env.HF_ENDPOINT_URL || '',
+    hfModel: env.HF_MODEL_ID || 'ibm-granite/granite-4.2-8b:deepinfra',
+    hfMode: env.HF_API_MODE || 'chat',
+    apiKey: env.AEGIS_API_KEY || '',
+    host: env.AEGIS_API_HOST || '127.0.0.1',
+    port: Number(env.AEGIS_API_PORT || 5174),
+    workspaceId: env.AEGIS_WORKSPACE_ID || 'sheridan-labs',
+  };
+}
