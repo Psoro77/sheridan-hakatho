@@ -26,9 +26,12 @@ SPLITS = {
     "train_A": {"start": "2024-01-01", "end": "2024-12-31", "label_cutoff": "2024-12-31"},
     "valid": {"start": "2025-01-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
     "train_final": {"start": "2024-01-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
-    # Fold B (second validation fold): train labels end before validB's period starts.
-    "trainB": {"start": "2024-01-01", "end": "2025-03-31", "label_cutoff": "2025-03-31"},
-    "validB": {"start": "2025-04-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
+    # Two DISJOINT validation periods (each exploited CVE counted once):
+    #   V1: train_A (2024, labels to 2024-12-31) -> validV1 (2025-01..04)
+    #   V2: trainV2 (2024-01..2025-04, labels to 2025-04-30) -> validV2 (2025-05..09)
+    "validV1": {"start": "2025-01-01", "end": "2025-04-30", "label_cutoff": "2025-12-31"},
+    "trainV2": {"start": "2024-01-01", "end": "2025-04-30", "label_cutoff": "2025-04-30"},
+    "validV2": {"start": "2025-05-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
     # predict comes from scoreboard_2026.csv; judges count KEV through 2026-11-04.
     "predict": {"start": "2026-01-01", "end": "2026-09-30", "label_cutoff": "2026-11-04"},
 }
@@ -38,6 +41,7 @@ HISTORY_START = "2021-01-01"
 
 SMOOTH_M = 20
 TOP_K = 500
+SCOREBOARD_ROWS = 72_670  # validation depth is scaled: k = TOP_K * n_rows / SCOREBOARD_ROWS
 
 # Granite R2-small (ModernBERT) ran at 12 texts/s on our CPU (~5.5 h for 235k texts); Granite
 # 30m-english (R1) at 128 tokens runs 63 texts/s (~1 h). Both are IBM Granite; see docs/columns_used.md.

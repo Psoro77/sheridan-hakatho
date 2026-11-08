@@ -44,6 +44,8 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
         return KW_TEXT[feat] if v == 1 else None
     if feat in FLAG_TEXT:
         return FLAG_TEXT[feat] if v == 1 else None
+    if feat == "exploit_archive":
+        return "Exploit published on Exploit-DB or Metasploit" if (r.get("exploitdb") == 1 or r.get("metasploit") == 1) else None
     if feat == "n_exploit_flags":
         return (f"{int(v)} public exploit source" + ("s" if v > 1 else "")) if v and v > 0 else None
     if feat == "epss_pct":
@@ -53,13 +55,13 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
     if feat in ("assigner_kev_rate", "desc_vendor_kev_rate", "assigner_n_hist"):
         rate = max(r.get("assigner_kev_rate") or 0, r.get("desc_vendor_kev_rate") or 0)
         prior = _PRIORS.get("assigner_kev_rate", 0)
-        return (f"{rate:.1%} of past {r['vendor']} CVEs were exploited ({rate / prior:.0f}x average)"
+        return (f"{rate:.1%} of past {r['vendor']} CVEs were exploited ({rate / prior:.0f}x typical)"
                 if prior and rate >= 3 * prior else None)
     if feat == "desc_product_kev_count":
         return f"{r['desc_product']} attacked {int(v)} times before (KEV)" if v and v > 0 else None
     if feat == "desc_product_kev_rate":
         prior = _PRIORS.get(feat, 0)
-        return (f"{v:.1%} of past {r['desc_product']} CVEs were exploited ({v / prior:.0f}x average)"
+        return (f"{v:.1%} of past {r['desc_product']} CVEs were exploited ({v / prior:.0f}x typical)"
                 if prior and v and v >= 3 * prior and isinstance(r.get("desc_product"), str) else None)
     if feat == "kev_vendor_kev_12m":
         return f"{r['vendor']} had {int(v)} KEV additions in the past year (active campaigns)" if v and v > 0 else None
@@ -71,7 +73,7 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
         return "Matches past attack patterns (targeted vendor + attack type + product)"
     if feat == "kev_vendor_kev_rate":
         prior = _PRIORS.get(feat, 0)
-        return (f"{v:.1%} of past {r['vendor']} CVEs were exploited ({v / prior:.0f}x average)"
+        return (f"{v:.1%} of past {r['vendor']} CVEs were exploited ({v / prior:.0f}x typical)"
                 if prior and v and v >= 3 * prior else None)
     if feat == "sib_any_flag":
         return "A same-day CVE from this vendor already has exploit code" if v == 1 else None
@@ -129,7 +131,11 @@ def contributions(f: pd.DataFrame, meta: dict) -> pd.DataFrame:
         else:
             m = joblib.load(MODEL_DIR / f"{comp['name']}.joblib")
             Z = m[:-1].transform(lr_frame(f, cols))
-            sv = Z * m[-1].coef_[0]
+            coef = m[-1].coef_[0]
+            # Sign-aware: only features whose HIGHER values raise risk (coef > 0) can become reasons.
+            # A negative-coef feature with a below-average value also pushes the score up, but its
+            # reason text ("attacked N times", "part of a big batch") would state the opposite.
+            sv = Z * np.where(coef > 0, coef, 0.0)
         c = pd.DataFrame(sv, columns=cols, index=f.index)
         if len(meta["components"]) > 1:
             c = c.div(c.abs().sum(axis=1).replace(0, 1), axis=0)

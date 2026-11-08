@@ -46,10 +46,11 @@ def name_clusters(desc: pd.Series, labels: np.ndarray, top: int = 5) -> dict[int
 
 
 def main() -> None:
-    if OUT.exists():
-        print(f"cache exists: {OUT}; delete it to recompute")
-        return
     seed_everything()
+    if OUT.exists():
+        print(f"cluster cache exists: {OUT} (delete to refit); rebuilding the Discovery table only")
+        discovery_table(pd.read_parquet(OUT))
+        return
     import umap
 
     emb, idx = load_embeddings()
@@ -75,12 +76,19 @@ def main() -> None:
     cl = pd.DataFrame({"cve_id": ids.to_numpy(), "cluster_id": labels.astype(int)})
     cl.to_parquet(OUT, index=False)
     np.save(PROCESSED_DIR / "umap15.npy", Z.astype(np.float32))
+    discovery_table(cl)
 
-    # Discovery table.
+
+def discovery_table(cl: pd.DataFrame) -> None:
+    """Cluster KEV rates for the Discovery slide. Only CVEs published 2022..2025: before 2022 only KEV
+    CVEs were embedded (no negatives), which made old KEV favourites look like the top clusters."""
+    from .embed import EMBED_START
+
     v = data_io.load_vulns(["cve_id", "published", "description"])
     kev = data_io.load_kev()
     sb = set(data_io.load_scoreboard()["cve_id"])
     d = cl.merge(v, on="cve_id", how="left").merge(kev[["cve_id", "date_added"]], on="cve_id", how="left")
+    d = d[d["published"] >= EMBED_START]
     names = name_clusters(d["description"], d["cluster_id"].to_numpy())
     cutoff = pd.Timestamp("2025-12-31")
     hist = d[(d["published"] <= cutoff)]
@@ -96,6 +104,7 @@ def main() -> None:
         "n_scoreboard": d[d["cve_id"].isin(sb)].groupby("cluster_id").size().reindex(g.index).fillna(0).astype(int).to_numpy(),
     })
     table["lift_vs_prior"] = (table["kev_rate_train"] / prior).round(2)
+    table["n_train"] = g["count"].to_numpy()
     table = table.sort_values("kev_rate_train", ascending=False)
     table.to_csv(OUTPUT_DIR / "clusters.csv", index=False)
 

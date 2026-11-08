@@ -39,6 +39,7 @@ CVSS_ORD = {
     "availability_impact": {"NONE": 0, "LOW": 1, "HIGH": 2},
 }
 VENDOR_STOP = {"multiple", "multiple vendors", "unknown", "n/a", "the", "open source"}
+STACKED = ("text_lr_score", "prior_lr_score", "prior_gbm_score")
 PRODUCT_STOP = {
     "Kernel", "Framework", "Server", "Software", "Devices", "Products", "Office", "Word", "Webmail",
     "HTTP Server", "Mobile Devices", "Multiple", "Firmware", "Application", "Platform", "Client", "Router",
@@ -486,7 +487,12 @@ def cluster_features(df: pd.DataFrame, hist: pd.DataFrame) -> pd.DataFrame:
         return out
     cl = pd.read_parquet(path).set_index("cve_id")["cluster_id"]
     out["cluster_id"] = df["cve_id"].map(cl).fillna(-1).astype(int)
-    h = hist.assign(cluster_id=hist["cve_id"].map(cl))
+    from .embed import EMBED_START
+
+    # Only CVEs that were embedded as a full population (published >= EMBED_START). Before 2022 only
+    # KEV CVEs were embedded, so including them made every older cluster look 100% exploited.
+    h = hist[hist["published"] >= EMBED_START]
+    h = h.assign(cluster_id=h["cve_id"].map(cl))
     h["cluster_id"] = h["cluster_id"].where(h["cluster_id"] >= 0)  # noise -> NaN -> prior
     out["cluster_kev_rate"] = np.nan
     for cutoff, ix in df.groupby("history_cutoff").groups.items():
@@ -513,7 +519,7 @@ def main() -> None:
         print("embeddings missing; text features = NaN (run src.embed)")
         emb, idx = None, None
 
-    splits = {n: pd.read_parquet(PROCESSED_DIR / f"{n}.parquet") for n in ("train_A", "valid", "train_final", "trainB", "validB", "predict")}
+    splits = {n: pd.read_parquet(PROCESSED_DIR / f"{n}.parquet") for n in ("train_A", "valid", "train_final", "validV1", "trainV2", "validV2", "predict")}
     feats = {}
     for name, df in splits.items():
         parts = [
@@ -533,6 +539,12 @@ def main() -> None:
                 f[c] = np.nan
         f["prior_lr_score"] = prior_lr_features(df, f, hist, kev, emb, idx) if emb is not None else np.nan
         f["prior_gbm_score"] = prior_gbm_features(df, f, hist, kev, emb, idx) if emb is not None else np.nan
+        # Stacked scores come from a different model per history cutoff, so their raw scale shifts
+        # (e.g. text_lr mean -2.3 in training vs -1.3 on predict). Use the percentile within each
+        # cutoff group instead (same idea as epss_pct). Raw values kept for diagnostics only.
+        for c in STACKED:
+            f[f"{c}_raw"] = f[c]
+            f[c] = f.groupby("history_cutoff")[c].rank(pct=True)
         f = pd.concat([f, sibling_features(f, df)], axis=1)
         feats[name] = f
         print(f"{name:12s} {f.shape} positives={f['label'].sum() if name != 'predict' else 'n/a'}")

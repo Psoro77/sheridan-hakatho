@@ -311,8 +311,8 @@ Status: full pipeline implemented and run end to end. `ml/top500.csv` (v2) is a 
 - **LightGBM** with only ~40 train_A positives: depth-2 trees, `scale_pos_weight = sqrt(neg/pos)`,
   L2 = 10, fixed 300 rounds, 5-seed bagging. Default params + full neg/pos weight + early stopping
   memorised the positives (vendor features dropped hits@500 from 18 to 7).
-- **Selection** (logged in `outputs/selected_features.json`): exploit + vendor/keyword + text + cluster.
-  Caution group (CVSS, CWE) and `desc_itw_phrase` dropped: no gain of >= 2 hits@500 on valid.
+- *(Round 1, superseded)* Selection was LightGBM with exploit + vendor/keyword + text + cluster. See
+  round 4 below for the current model; `desc_itw_phrase` IS used now (as a disclosed risk).
 - Vendor display names: CNA UUIDs mapped to the vendor their descriptions name most (display only).
 
 ### Results
@@ -359,3 +359,16 @@ CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), mode
 - Added assigner → KEV vendor map (past-only) and `prior_gbm_score` (tree prior on history, as-of-prior-year
   features, label = KEV within 365 days). **Selected compact LR v3** (`train.COMPACT_V3`): folds 31 / 23 (54).
 - 2026 check (report only): v3 = 15/60, v2 = 17/60 (commit 3fa404c). Within noise; kept the validated v3.
+
+### Round 4: corrected protocol (2026-11-08, ~04:30 to 05:30) — CURRENT STATE
+- An external review found: validation depth twice the scoreboard's, fold B overlapping fold A, selection
+  overfit, cluster rates biased by pre-2022 KEV CVEs, stacked-score scale shifts, sign-blind LR reasons. All
+  confirmed and fixed (details: `ml/docs/findings.md`, round 4).
+- Protocol now: disjoint folds V1 (train_A → validV1, 2025-01..04) and V2 (trainV2 → validV2, 2025-05..09);
+  depth k = 500 × rows / 72,670 per fold; quota = fraction of k; training rows with < 31 days horizon dropped.
+- **Selected: compact LR v3 + ITW first** (no quota). 24 of 52 found at scoreboard depth (46%) vs 15 for
+  exploit-then-EPSS. Plateau: all C values give 24; blends and transforms worse. Stopped iterating.
+- `desc_itw_phrase` is a **disclosed risk**: rule + feature + inside prior scores + sib_any_itw + embedded text;
+  5 positives of support; descriptions are today's versions.
+- 2026 answer key checked after each round (9, 11, 17, 15, 19 of 60), never used to choose. Final: **19/60**.
+- Earlier claims in rounds 2 and 3 above (folds 28/23, 31/23, "+3 to +5 on both folds") are superseded.

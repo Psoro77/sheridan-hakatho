@@ -12,8 +12,9 @@ Notable results for the pitch ("Discovery"). Newest at the bottom.
 
 ## Baselines on valid (hits@500 of 52 positives)
 - CVSS first: 8, EPSS first: 8, public exploit code then EPSS: 18.
-- On 2026 the track reports 7 / 6 / 8, so valid is easier than the scoreboard for flag-based ranking
-  (fewer 2026 rows have flags at snapshot, or flags are noisier).
+- On 2026 the track reports 7 / 6 / 8. Valid only *looked* easier: a top 500 on valid's 35,280 rows goes
+  twice as deep (1.4%) as on the scoreboard's 72,670 (0.69%). The flagged share is the same (2.15% vs 2.26%).
+  At the scoreboard-equivalent depth (k = 243) exploit-then-EPSS finds 14, not 18. (Corrected after review.)
 
 ## What the 2025 positives look like
 - 5 of 52 had **no EPSS score at the end of their publish month** (e.g. a Chrome V8 zero-day published
@@ -79,3 +80,41 @@ vendor rate: folds **31 / 23 (sum 54)** vs v2 28 / 23 (51); hits@1000 35/28 vs 3
 Post-hoc 2026 check (report only): v3 submitted top500 = **15/60**, v2 was 17/60, baselines 7/6/8. The 2-hit
 gap is within noise (fold CIs are about ±8). We kept the validation-selected v3 rather than choose by the
 2026 answer key.
+
+
+## Round 4: corrected evaluation protocol (after external review) — THE NUMBERS TO QUOTE
+An external review found three flaws in rounds 2 and 3, all confirmed:
+1. **Depth.** Validation hits@500 on ~35k rows went twice as deep as the scoreboard's top 500. Rule gains
+   (segmented quota) were mostly a depth artefact.
+2. **"Fold B" overlapped fold A** (validB ⊂ valid), so "both folds" claims were one observation.
+3. **Many configurations selected on the same 52 positives.** Treat round-2/3 gaps as noise.
+Plus: cluster rates were inflated by pre-2022 KEV CVEs (only KEV CVEs embedded before 2022), stacked
+scores shifted scale across cutoffs, and LR reasons ignored coefficient signs.
+
+Fixes: disjoint folds V1 (2025-01..04, 25 positives, trained on 2024) and V2 (2025-05..09, 27 positives,
+trained on 2024-01..2025-04); each fold scored at k = 500 × rows / 72,670 (110 and 133); quotas as a fraction
+of k; training rows with < 31 days of label horizon dropped; cluster/history rates restricted to 2022+;
+stacked scores as within-cutoff percentiles; sign-aware LR reasons.
+
+| Ranking (scoreboard depth) | V1 @110 | V2 @133 | Found (of 52) |
+|---|---|---|---|
+| Exploit code then EPSS (baseline) | 7 | 8 | 15 (29%) |
+| LightGBM core | 7 | 6 | 13 (25%) |
+| Compact LR v2 | 8 | 14 | 22 (42%) |
+| **Compact LR v3 + ITW first (selected)** | **9** | **15** | **24 (46%)** |
+| Compact LR v4 (clean) + ITW first | 9 | 15 | 24 (46%) |
+| + CVSS/CWE (rejected: leakage) | 11 | 15 | 26 (50%) |
+
+- At the real depth the **segmented quota does not help** (best quota ≈ no quota); the ITW rule adds about +1.
+- The result is a **stable plateau**: every LR regularization strength (C = 0.03 to 1) gives 24; blends and a
+  log-tail transform give 14 to 20. We stopped iterating there rather than search for a lucky variant.
+- Near misses all have top-1% prior scores but no exploit code (Ivanti EPM ×3, Kentico ×2, SonicWall, Windows
+  NTLM): the remaining gap is the no-exploit-code segment, where 40 to 70 training positives are too few.
+
+**Honest claim for the write-up: about 1.6× the best baseline on 2025 validation at scoreboard depth
+(24 vs 15 of 52 exploited CVEs; bootstrap CIs are wide, roughly ±6).**
+
+### 2026 answer key: how often we looked
+The live 2026 KEV file was checked **after each round** (v1 9, v2 11, round 2 17, round 3 15, round 4 19 of
+60; baselines 7 / 6 / 8) and **never used to choose** a model, feature or rule. Every choice above was made on
+validation before the 2026 number was computed. The final submitted top500 finds **19 of 60**.

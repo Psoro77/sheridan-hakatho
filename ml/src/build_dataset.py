@@ -100,7 +100,7 @@ def main() -> None:
     signals = signals[signals["cve_id"].isin(vulns["cve_id"])]
     print(f"vulns={len(vulns):,} kev={len(kev):,} signals={len(signals):,}")
 
-    for name in ("train_A", "valid", "train_final", "trainB", "validB"):
+    for name in ("train_A", "valid", "train_final", "validV1", "trainV2", "validV2"):
         df = build_training_split(name, vulns, kev, signals)
         # Leakage asserts.
         pos = df[df["label"] == 1]

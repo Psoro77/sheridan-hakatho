@@ -1,5 +1,6 @@
 {
   "split": "valid",
+  "note": "model scores are out-of-time from folds V1 (2025-01..04) and V2 (2025-05..09)",
   "results": {
     "cvss_first": {
       "hits@100": 4,
@@ -7,7 +8,8 @@
       "hits@1000": 14,
       "pr_auc": 0.02122,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 8
     },
     "epss_first": {
       "hits@100": 4,
@@ -15,7 +17,8 @@
       "hits@1000": 13,
       "pr_auc": 0.03097,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 8
     },
     "exploit_then_epss": {
       "hits@100": 8,
@@ -23,119 +26,80 @@
       "hits@1000": 22,
       "pr_auc": 0.04722,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 14
     },
-    "L1_exploit": {
-      "hits@100": 7,
-      "hits@500": 17,
-      "hits@1000": 21,
-      "pr_auc": 0.04032,
-      "n": 35280,
-      "positives": 52
-    },
-    "L2_+vendor_kw": {
-      "hits@100": 6,
-      "hits@500": 18,
-      "hits@1000": 20,
-      "pr_auc": 0.0442,
-      "n": 35280,
-      "positives": 52
-    },
-    "L3_+text": {
-      "hits@100": 6,
-      "hits@500": 19,
-      "hits@1000": 20,
-      "pr_auc": 0.05894,
-      "n": 35280,
-      "positives": 52
-    },
-    "L4_core(+cluster)": {
-      "hits@100": 6,
-      "hits@500": 18,
-      "hits@1000": 20,
-      "pr_auc": 0.04111,
-      "n": 35280,
-      "positives": 52
-    },
-    "L5_core+prior": {
-      "hits@100": 7,
-      "hits@500": 11,
-      "hits@1000": 21,
-      "pr_auc": 0.05138,
-      "n": 35280,
-      "positives": 52
-    },
-    "L6_core+sibling": {
+    "L4_core": {
       "hits@100": 8,
-      "hits@500": 16,
-      "hits@1000": 21,
-      "pr_auc": 0.07289,
+      "hits@500": 21,
+      "hits@1000": 24,
+      "pr_auc": 0.06071,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 13
     },
     "L7_core+prior+sibling": {
-      "hits@100": 7,
-      "hits@500": 15,
-      "hits@1000": 23,
-      "pr_auc": 0.08716,
+      "hits@100": 8,
+      "hits@500": 20,
+      "hits@1000": 25,
+      "pr_auc": 0.0917,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 13
     },
     "L8_core+prior+sibling+caution": {
-      "hits@100": 10,
-      "hits@500": 20,
-      "hits@1000": 29,
-      "pr_auc": 0.07439,
+      "hits@100": 12,
+      "hits@500": 23,
+      "hits@1000": 27,
+      "pr_auc": 0.08307,
       "n": 35280,
-      "positives": 52
-    },
-    "L9_core+prior+sibling+itw": {
-      "hits@100": 7,
-      "hits@500": 15,
-      "hits@1000": 23,
-      "pr_auc": 0.08716,
-      "n": 35280,
-      "positives": 52
-    },
-    "C1_compact_v1": {
-      "hits@100": 10,
-      "hits@500": 17,
-      "hits@1000": 25,
-      "pr_auc": 0.08926,
-      "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 17
     },
     "C2_compact_v2": {
-      "hits@100": 7,
-      "hits@500": 22,
-      "hits@1000": 28,
-      "pr_auc": 0.05975,
+      "hits@100": 11,
+      "hits@500": 24,
+      "hits@1000": 29,
+      "pr_auc": 0.07118,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 22
     },
     "C3_compact_v3": {
-      "hits@100": 7,
-      "hits@500": 21,
+      "hits@100": 11,
+      "hits@500": 26,
       "hits@1000": 30,
-      "pr_auc": 0.06734,
+      "pr_auc": 0.0738,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 23
     },
-    "B1_blend": {
-      "hits@100": 8,
-      "hits@500": 17,
-      "hits@1000": 28,
-      "pr_auc": 0.06931,
+    "C4_compact_v4": {
+      "hits@100": 13,
+      "hits@500": 24,
+      "hits@1000": 27,
+      "pr_auc": 0.08598,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 23
+    },
+    "C4h_compact_v4+horizon": {
+      "hits@100": 13,
+      "hits@500": 24,
+      "hits@1000": 29,
+      "pr_auc": 0.0844,
+      "n": 35280,
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 22
     },
     "model_selected": {
-      "hits@100": 12,
-      "hits@500": 31,
-      "hits@1000": 35,
-      "pr_auc": 0.08505,
+      "hits@100": 13,
+      "hits@500": 27,
+      "hits@1000": 31,
+      "pr_auc": 0.09802,
       "n": 35280,
-      "positives": 52
+      "positives": 52,
+      "hits@243(scoreboard_depth)": 24
     }
   }
 }

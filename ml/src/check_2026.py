@@ -34,9 +34,10 @@ def main() -> None:
     scores = OUTPUT_DIR / "scores_predict.parquet"
     if scores.exists():
         s = sb[["cve_id", "label"]].merge(pd.read_parquet(scores), on="cve_id")
-        res["model"] = ranking_report(s["label"], s["p_exploit"])
-        found = s.sort_values("rank").head(TOP_K).query("label == 1")["cve_id"].tolist()
-        res["model"]["found_ids"] = found
+        # NOTE: ranks by plain model probability, NOT the submitted order (rules applied). Label it so.
+        res["model_plain_probability_order"] = ranking_report(s["label"], s["p_exploit"])
+        found = s.sort_values("rank").head(TOP_K).query("label == 1")["cve_id"].tolist()  # rank = submitted order
+        res["submitted_top500"]["found_ids"] = found
     (OUTPUT_DIR / "check_2026.json").write_text(json.dumps(res, indent=2))
     print(pd.DataFrame({k: {m: v.get(m) for m in ("hits@100", "hits@500", "hits@1000", "pr_auc")}
                         for k, v in res.items()}).T.to_string())

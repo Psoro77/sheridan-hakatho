@@ -1,142 +1,142 @@
-cluster_id,name,size,kev_hits_train,kev_rate_train,n_scoreboard,lift_vs_prior
-1,"fusion middleware, oracle fusion, middleware component, weblogic, vulnerability oracle",729,19,0.1372,494,13.21
-126,"device reload, cisco ios, ios software, asa, cisco",504,50,0.12336,96,11.88
-19,"security severity, chromium security, page chromium, google chrome, chrome prior",873,9,0.11368,610,10.94
-102,"privilege vulnerability, elevation privilege, vulnerability windows, windows kernel, locally windows",1083,100,0.10892,146,10.49
-65,"overflow microsoft, office word, word allows, locally heap-based, microsoft office",418,13,0.10651,181,10.25
-21,"security severity, chromium security, page chromium, google chrome, chrome prior",995,23,0.09173,638,8.83
-100,"locally use, privileges locally, network use, free microsoft, file driver",1162,25,0.08319,501,8.01
-44,"progress telerik, telerik, deserialization untrusted, result deserialization, telerik ajax",439,22,0.07792,143,7.5
-24,"ipados, ios ipados, addressed improved, improved memory, app able",510,26,0.07122,119,6.86
-63,"simple editor, vulnerability microsoft, server remote, contain remote, crowd",2479,138,0.06657,343,6.41
-23,"ipados, ios ipados, improved bounds, addressed improved, checking issue",574,15,0.05103,160,4.91
-51,"connect secure, ivanti, secure version, ivanti connect, ivanti avalanche",296,13,0.0482,34,4.64
-0,"fusion middleware, oracle fusion, middleware component, vulnerability oracle, impacts cvss",300,1,0.04473,260,4.31
-97,"microsoft edge, edge chromium-based, chromium-based, chromium-based allows, vulnerability exposure",1092,32,0.04294,277,4.13
-48,"fortios, fortiproxy, fortios versions, fortios fortios, fortiproxy versions",550,17,0.03677,92,3.54
-106,"locally heap-based, overflow windows, read windows, privileges locally, locally out-of-bounds",1599,11,0.03287,831,3.16
-134,"usg, firmware versions, series firmware, user underlying, authenticated command",2388,51,0.0327,691,3.15
-68,"fastgpt, context protocol, intelligence agents, continuous artificial, model context",372,2,0.032,277,3.08
-61,"foxit pdf, file adobe, affected out-of-bounds, foxit, mitigations aslr",2290,54,0.03008,418,2.9
-127,"interface cisco, web-based management, vulnerability web-based, cisco, nbsp",1428,28,0.02501,271,2.41
-30,"virtual server, big-ip, tmm, bigfix, configured virtual",395,7,0.02318,84,2.23
-89,"codeigniter, cms content, management cms, basercms, rbac authorization",355,2,0.023,218,2.21
-72,"unauthenticated local, lfi vulnerability, file inclusion, inclusion vulnerability, inclusion lfi",304,3,0.0211,143,2.03
-18,"chrome prior, google chrome, security severity, chromium security, exploit heap",482,8,0.02094,107,2.02
-123,"tarfile, extraction directory, pax, file archive, destination directory",462,4,0.02093,225,2.02
-28,"nvidia, display driver, mode layer, data tampering, privileges information",1103,13,0.02087,433,2.01
-53,"joomla extension, joomla, com unauthenticated, joomshaper com, extension joomshaper",308,1,0.02047,236,1.97
-50,"handlebars, mermaid, vite, injection ssti, commonmark",438,4,0.01985,200,1.91
-5,"esr firefox, fixed firefox, thunderbird thunderbird, thunderbird, firefox esr",1617,14,0.01872,610,1.8
-122,"mina sshd, apache mina, files path, mina, allows directory",1766,20,0.01854,547,1.78
-137,"d-link, vulnerability d-link, routers authentication, ddp, fixed-length stack-based",1485,21,0.01805,316,1.74
-43,"injection xxe, vulnerable xml, dtd, restriction xml, attack processing",464,6,0.01784,103,1.72
-27,"sap, low impact, availability application, exploitation attacker, integrity application",734,10,0.01769,164,1.7
-84,"apache tomcat, apache traffic, traffic server, thrift, issue allocation",363,2,0.01673,148,1.61
-136,"wavlink, re6250, re9000, re6300, re6350",379,4,0.01558,83,1.5
-66,"junos, networks junos, evo, junos evolved, evolved",830,8,0.01501,127,1.45
-108,"dll search, dll hijacking, eset, vulnerable dll, link libraries",442,5,0.01451,88,1.4
-124,"cwe-78, command command, used command, elements used, injection fortinet",567,5,0.01435,184,1.38
-46,"crm software, software application, customer relationship, suitecrm, relationship management",313,1,0.01299,147,1.25
-11,"vulnerability oracle, cvss base, impacts cvss, score confidentiality, compromise oracle",1629,4,0.01279,989,1.23
-115,"limitation pathname, pathname restricted, restricted directory, improper limitation, php local",801,7,0.01236,183,1.19
-42,"corruption processing, ioctl calls, processing ioctl, corruption wlan, corruption audio",619,6,0.01224,104,1.18
--1,noise / unclustered,72101,492,0.01194,24097,1.15
-79,"smr, prior smr, release allows, escargot, apr-2022 release",446,4,0.01185,91,1.14
-55,"kibana, capec-130, allocation capec-130, kibana lead, camel",295,1,0.01184,176,1.14
-47,"surrealdb, data visualization, low-code, datasource, source data",717,2,0.01144,466,1.1
-67,"flowise, flow prior, language model, oss, large language",557,1,0.01129,366,1.09
-110,"upload vulnerability, code uploading, crafted php, vaadin, uploading crafted",1640,13,0.01057,349,1.02
-69,"open webui, platform designed, intelligence platform, self-hosted platform, fixed open",427,1,0.00974,269,0.94
-20,"security severity, chromium security, page chromium, google chrome, chrome prior",2264,4,0.00952,1328,0.92
-10,"virtualbox, solaris, vulnerability oracle, cvss base, impacts cvss",463,2,0.00952,169,0.92
-41,"snapdragon, exynos, mobile processor, modem exynos, processor exynos",408,3,0.00889,60,0.86
-39,"exploitation multiple, deputy lead, java possible, determine app, android-13android",1081,7,0.00828,154,0.8
-131,"unifi, firmware ver, unifi protect, vulnerability unifi, ver earlier",1739,9,0.00787,492,0.76
-7,"jenkins, jenkins controller, earlier does, plugin earlier, connect attacker-specified",949,6,0.00763,140,0.73
-17,"app able, fixed macos, ipados, ios ipados, addressed improved",1734,9,0.00748,372,0.72
-90,"gitpython, virtualenv, submodule, git lfs, git windows",332,1,0.00698,138,0.67
-38,"modem possible, connected rogue, station controlled, rogue base, attacker additional",287,1,0.00698,82,0.67
-8,"teamcity, jetbrains, idea, intellij idea, intellij",530,2,0.00681,146,0.66
-118,"keycloak, path channel, jupyterlab, using alternate, audience",3604,10,0.00601,1352,0.58
-60,"kofax, editor user, parsing out-of-bounds, u3d, parsing u3d",554,3,0.00591,27,0.57
-70,"allows server, posthog, forgery issue, ssrf microsoft, contains server-side",1442,4,0.00575,589,0.55
-34,"scalance, simatic, cp300, versions simatic, siplus",442,2,0.00565,55,0.54
-113,"enable denial, subsequent confidentiality, resulting subsequent, result potentially, special internal",1586,7,0.00543,258,0.52
-107,"imagemagick, hdf5, software used, commit discovered, images prior",4175,12,0.00519,1357,0.5
-121,"accesses injected, escaping makes, scripts pages, injected page, pages execute",394,1,0.00501,129,0.48
-31,"chamilo, erpnext contains, erpnext, frappe, frappe erpnext",653,1,0.00456,254,0.44
-16,"command sql, sql command, allows sql, used sql, allows blind",1505,4,0.0039,334,0.38
-25,"dgn, exists parsing, target visit, parsing files, trigger write",313,1,0.00376,10,0.36
-125,"release versions, powerprotect, data domain, dell powerprotect, powerscale",1179,2,0.00336,409,0.32
-62,"substance3d, file substance3d, affected out-of-bounds, painter, painter versions",492,1,0.00325,107,0.31
-6,"remediated issue, starting versions, gitlab, conditions allowed, versions allowed",934,2,0.00324,231,0.31
-109,"bios, smi, smm, dell poweredge, poweredge",428,1,0.00318,60,0.31
-26,"wwbn, wwbn avideo, video platform, avideo, json php",337,0,0.00305,269,0.29
-12,"adobe experience, browse page, browser browse, vulnerable field, vulnerable form",867,2,0.00299,133,0.29
-83,"undici, final final, transfer-encoding, netty, network application",1183,1,0.00297,639,0.29
-56,"dangerous type, file dangerous, shell web, type vulnerability, upload web",508,1,0.00278,85,0.27
-80,"ibm lts, microsoft message, lts lts, queuing msmq, lts allow",550,1,0.00261,66,0.25
-59,"cobalt, plugin user, gimp, dxf, dxf files",521,1,0.00258,63,0.25
-117,"affected site, site server, make remote, missing file, wp-config php",1378,2,0.00249,403,0.24
-13,"kernel following, kasan, linux kernel, vulnerability resolved, cpu pid",20306,28,0.00245,7553,0.24
-88,"component mcp, metagpt, server manipulation, responded vulnerability, agentscope",360,0,0.00242,255,0.23
-138,"sourcecodester, code-projects, vulnerability sourcecodester, leads sql, itsourcecode",9038,16,0.00238,2002,0.23
-37,"possible bounds, write missing, read missing, check lead, missing bounds",2080,4,0.00237,238,0.23
-15,"desktop protocol, implementation remote, rdp, remote desktop, protocol prior",345,0,0.00233,155,0.22
-75,"smr, prior smr, release allows, implicit intent, release-keys",1102,2,0.00231,134,0.22
-64,"openfga, senders, non-owner, operator admin, authorization permission",953,0,0.00226,840,0.22
-22,"xwiki, rc-1, platform generic, runtime services, generation xss",800,1,0.00222,189,0.21
-93,"bouncy castle, bouncy, castle java, castle, crypt",1340,1,0.00196,603,0.19
-135,"totolink, vulnerability totolink, file cgi-bin, boafrm, file boafrm",1476,2,0.00188,279,0.18
-85,"xmldom, xmldom xmldom, domparser, o_excl, cpanel",399,0,0.00157,214,0.15
-111,"tenda, file goform, goform, contain stack, h3c",2645,3,0.00155,568,0.15
-104,"concrete cms, leading credentials, web altering, trusted session, disclosure trusted",3579,4,0.00152,702,0.15
-96,"unauthenticated cross, subscriber cross, versions unauthenticated, versions subscriber, contributor cross",557,0,0.00139,357,0.13
-71,"unbound, nlnet labs, nlnet, read dns, dnssec",373,0,0.00136,168,0.13
-2,"splunk, splunk enterprise, does hold, soar, enterprise versions",322,0,0.00131,145,0.13
-129,"siplus, versions siplus, ruoyi, way vulnerability, yeqifu",1428,1,0.00126,413,0.12
-29,"aion, hcl aion, hcl, hcl launch, myxalytics",359,0,0.00105,174,0.1
-91,"gpac, abi-16, version abi-16, mp4 file, dos supplying",327,0,0.00104,116,0.1
-33,"allows privilege, privilege assignment, incorrect privilege, assignment vulnerability, unauthenticated privilege",333,0,0.00103,116,0.1
-78,"amf, mme, sbi, udr, core network",498,0,0.00098,282,0.09
-87,"chain present, installed target, theme installed, pop, plugin theme",288,0,0.00097,70,0.09
-103,"rtls, versions simatic, locating, simatic, contiki-ng",370,0,0.0009,132,0.09
-14,"kasan, kernel following, hdev, skb, workqueue",518,0,0.00081,205,0.08
-49,"openproject, plane open-source, references idor, wekan, open-source project",626,0,0.00077,273,0.07
-77,"allows retrieve, embedded sensitive, sent data, retrieve embedded, information sent",403,0,0.00076,108,0.07
-82,"ibm concert, cryptographic algorithms, concert, verify access, ibm verify",410,0,0.00067,89,0.06
-94,"appointment booking, appointment, calendar wordpress, booking calendar, booking plugin",679,0,0.00065,295,0.06
-76,"unauthenticated sensitive, bizhub, actor vulnerability, versions exposure, unauthorized actor",492,0,0.00063,142,0.06
-9,"mattermost versions, mattermost, mattermost advisory, playbook, playbooks",499,0,0.00062,158,0.06
-86,"rack, vulnerable prototype, multer, ruby web, dos injecting",541,0,0.00062,182,0.06
-112,"access uncontrolled, enable escalation, privilege local, potentially enable, element intel",398,0,0.00061,61,0.06
-73,"praisonai, multi-agent, vllm, picklescan, backdoor inserted",1044,0,0.00059,597,0.06
-81,"site open, redirection untrusted, backstage, url redirection, untrusted site",533,0,0.00056,125,0.05
-36,"levels issue, exploiting incorrectly, security levels, allows exploiting, control security",523,0,0.00055,117,0.05
-95,"shortcode attributes, embed allow, post shortcode, shortcode embed, attacks used",417,0,0.00055,43,0.05
-92,"vim, gpac, source command, vim open, repository gpac",449,0,0.00055,85,0.05
-133,"add_query_arg appropriate, scripting use, successfully trick, execute successfully, use add_query_arg",441,0,0.00055,67,0.05
-130,"melsec, versions mitsubishi, iq-r series, melsec iq-r, iq-r",527,0,0.00051,115,0.05
-45,"allows object, object injection, vulnerability themerex, themerex, deserialization untrusted",670,0,0.00049,180,0.05
-139,"code-projects, blood bank, blood, hospital management, critical code-projects",570,0,0.00049,149,0.05
-98,"argo, kyverno, openshift, gitops, cluster-wide",1039,0,0.00048,513,0.05
-40,"check lead, possible missing, missing permission, service missing, telephony service",456,0,0.00046,13,0.04
-119,"parameter outputting, page leading, scripting used, leading reflected, outputting page",473,0,0.00045,25,0.04
-54,"does csrf, csrf check, make logged, logged admin, sanitisation escaping",473,0,0.00044,15,0.04
-74,"permission control, service confidentiality, affect service, confidentiality permission, permission verification",578,0,0.00042,86,0.04
-58,"allows cross, site request, csrf vulnerability, forgery issue, versions cross-site",3516,1,0.00038,318,0.04
-128,"widget versions, accesses injected, elementor plugin, widgets versions, injected page",704,0,0.00036,117,0.03
-105,"xss stored, prior cross-site, xss reflected, microweber, pimcore",653,0,0.00034,48,0.03
-3,"require statement, include require, filename include, php local, allows php",1019,0,0.00033,405,0.03
-114,"attacks unfiltered_html, capability disallowed, escape settings, disallowed example, multisite setup",745,0,0.0003,46,0.03
-120,"campcodes, vulnerability campcodes, campcodes online, critical campcodes, sales inventory",737,0,0.0003,43,0.03
-4,"mysql server, multiple protocols, protocols compromise, impacts cvss, cvss base",1056,0,0.00028,210,0.03
-52,"additional sql, append additional, queries existing, existing queries, existing sql",1462,0,0.00025,548,0.02
-57,"incorrect nonce, request granted, forgery versions, missing incorrect, granted trick",1083,0,0.00024,241,0.02
-101,"phpgurukul, leads sql, searchdata, file admin, argument searchdata",1134,0,0.0002,95,0.02
-99,"unauth reflected, versions unauth, unauth, admin stored, auth admin",1091,0,0.0002,72,0.02
-132,"accesses injected, injected page, attributes makes, supplied attributes, scripts pages",1609,0,0.0002,468,0.02
-35,"levels issue, security levels, allows exploiting, exploiting incorrectly, control security",2642,0,0.00011,619,0.01
-116,"wordpress vulnerable, vulnerable unauthorized, including makes, missing capability, subscriber-level",3630,0,0.00011,1358,0.01
-32,"generation cross-site, input web, page generation, neutralization input, generation xss",7006,0,4e-05,988,0.0
+cluster_id,name,size,kev_hits_train,kev_rate_train,n_scoreboard,lift_vs_prior,n_train
+19,"security severity, chromium security, page chromium, chrome prior, google chrome",869,5,0.06604,610,15.5,57
+21,"security severity, chromium security, page chromium, chrome prior, google chrome",985,13,0.05385,638,12.64,223
+100,"locally use, privileges locally, network use, free microsoft, dwm",1152,15,0.05149,501,12.08,273
+51,"ivanti, connect secure, ivanti connect, secure version, ivanti avalanche",295,12,0.04427,34,10.39,253
+23,"ipados, ios ipados, improved bounds, checking issue, addressed improved",569,10,0.03442,160,8.08,273
+44,"progress telerik, telerik, deserialization untrusted, result deserialization, enabling maliciously",426,9,0.0334,143,7.84,252
+1,"fusion middleware, oracle fusion, middleware component, weblogic, vulnerability oracle",714,4,0.03268,494,7.67,105
+102,"privilege vulnerability, elevation privilege, vulnerability windows, service elevation, windows kernel",1010,27,0.03198,146,7.51,827
+48,"fortios, fortiproxy, fortios versions, fortios fortios, fortiproxy versions",545,12,0.0261,92,6.13,443
+126,"cisco, device reload, ftd, ftd software, asa",462,8,0.02215,96,5.2,345
+89,"codeigniter, management cms, basercms, rbac authorization, laravel git",355,2,0.02172,218,5.1,76
+24,"ipados, ios ipados, improved memory, app able, addressed improved",491,7,0.0203,119,4.76,329
+53,"joomla extension, joomla, com unauthenticated, joomshaper, joomshaper com",308,1,0.01839,236,4.32,39
+63,"bitbucket data, net remoting, remoting, vulnerability microsoft, rce remote",2376,35,0.01778,343,4.17,1953
+68,"fastgpt, context protocol, intelligence agents, continuous artificial, model context",371,1,0.01596,277,3.75,48
+97,"microsoft edge, edge chromium-based, chromium-based, chromium-based allows, actor windows",1071,11,0.01521,277,3.57,709
+106,"locally heap-based, overflow windows, read windows, privileges locally, network heap-based",1593,5,0.01518,831,3.56,315
+43,"restriction xml, injection xxe, vulnerable xml, dtd, xxe injection",463,5,0.01465,103,3.44,327
+134,"authenticated command, user underlying, series firmware, dmx958xr, kenwood",2358,21,0.01373,691,3.22,1516
+127,"interface cisco, cisco, vulnerability web-based, web-based management, cisco nbsp",1415,15,0.01353,271,3.18,1095
+11,"vulnerability oracle, impacts cvss, score confidentiality, compromise oracle, product oracle",1629,4,0.01242,989,2.91,309
+46,"crm software, software application, customer relationship, fossbilling, suitecrm",313,1,0.01167,147,2.74,73
+28,"nvidia, mode layer, data tampering, display driver, driver windows",1097,7,0.0113,433,2.65,607
+66,"junos, networks junos, evo, junos evolved, evolved",828,6,0.01117,127,2.62,525
+123,"tarfile, extraction directory, tar archive, file archive, extractall",460,2,0.01048,225,2.46,179
+67,"flowise, flow prior, language model, large language, version flowise",557,1,0.01014,366,2.38,87
+42,"corruption processing, ioctl calls, processing ioctl, corruption wlan, corruption audio",618,5,0.01005,104,2.36,486
+30,"virtual server, big-ip, tmm, bigfix, configured virtual",391,3,0.01005,84,2.36,287
+65,"overflow microsoft, office word, word allows, network heap-based, locally heap-based",406,1,0.00969,181,2.27,92
+69,"open webui, platform designed, intelligence platform, self-hosted platform, fixed open",427,1,0.00875,269,2.05,104
+124,"command command, cwe-78, used command, cwe-78 improper, elements used",565,3,0.00855,184,2.01,341
+39,"exploitation multiple, java possible, deputy lead, locations possible, determine app",1081,7,0.00813,154,1.91,851
+18,"chrome prior, google chrome, security severity, chromium security, page chromium",477,3,0.00797,107,1.87,367
+136,"wavlink, re6250, linksys, re6300, re6500",377,2,0.00778,83,1.83,248
+72,"unauthenticated local, lfi vulnerability, inclusion lfi, inclusion vulnerability, file inclusion",302,1,0.00723,143,1.7,130
+115,"pathname restricted, limitation pathname, restricted directory, improper limitation, php local",798,4,0.00704,183,1.65,560
+137,"d-link, vulnerability d-link, routers authentication, ddp, goform",1472,8,0.00696,316,1.63,1142
+8,"teamcity, jetbrains, intellij idea, intellij, jetbrains intellij",530,2,0.00644,146,1.51,304
+90,"gitpython, virtualenv, git lfs, git windows, submodule",332,1,0.00627,138,1.47,153
+-1,noise / unclustered,71858,249,0.00608,24097,1.43,40962
+79,"smr, prior smr, release allows, escargot, smr apr-2022",444,2,0.00591,91,1.39,333
+108,"dll hijacking, dll search, search order, link libraries, crafted dll",439,2,0.00586,88,1.38,336
+47,"metabase, datasource, surrealdb, data visualization, source data",716,1,0.00565,466,1.33,172
+50,"handlebars, mermaid, injection ssti, vite, ssti",435,1,0.00519,200,1.22,189
+110,"upload vulnerability, code uploading, crafted php, unrestricted file, contain arbitrary",1633,6,0.0049,349,1.15,1222
+122,"dspace, mina sshd, apache mina, mina, traverse directories",1751,5,0.00473,547,1.11,1055
+17,"app able, fixed macos, ipados, ios ipados, sequoia",1730,5,0.00414,372,0.97,1207
+31,"chamilo, erpnext, chamilo lms, erpnext contains, frappe",653,1,0.0041,254,0.96,245
+27,"application sap, sap, low impact, availability application, integrity application",726,2,0.00366,164,0.86,549
+118,"keycloak, issuer, audience, gateway version, introspection",3600,6,0.00359,1352,0.84,1675
+0,"fusion middleware, oracle fusion, middleware component, vulnerability oracle, impacts cvss",299,0,0.00328,260,0.77,6
+34,"siplus, simatic, sicam, versions simatic, versions siplus",441,1,0.00278,55,0.65,370
+83,"undici, final final, transfer-encoding, netty, network application",1183,1,0.00267,639,0.63,387
+20,"chromium security, security severity, page chromium, google chrome, chrome prior",2261,1,0.00247,1328,0.58,419
+80,"ibm lts, lts lts, microsoft message, queuing msmq, service denial",550,1,0.00234,66,0.55,443
+60,"kofax, editor user, parsing out-of-bounds, u3d, exists parsing",552,1,0.00201,27,0.47,521
+22,"xwiki, rc-1, platform generic, runtime services, generation xss",800,1,0.00199,189,0.47,524
+16,"command sql, sql command, allows sql, used sql, allows blind",1503,2,0.00194,334,0.46,1056
+131,"unifi, vulnerability unifi, unifi protect, furbo, uart",1732,2,0.00179,492,0.42,1143
+61,"affected out-of-bounds, foxit pdf, mitigations aslr, bypass mitigations, acrobat",2239,3,0.00176,418,0.41,1731
+93,"bouncy castle, bouncy, castle java, castle, crypt",1340,1,0.00176,603,0.41,597
+125,"powerscale, dell powerscale, onefs, powerprotect, data domain",1178,1,0.00165,409,0.39,637
+6,"remediated issue, starting versions, gitlab, conditions allowed, versions allowed",933,1,0.0016,231,0.38,660
+12,"adobe experience, browser browse, browse page, scripts vulnerable, vulnerable form",866,1,0.00147,133,0.35,718
+5,"thunderbird thunderbird, esr firefox, fixed firefox, thunderbird, firefox esr",1604,1,0.00145,610,0.34,726
+7,"jenkins, earlier does, jenkins controller, plugin earlier, connect attacker-specified",944,1,0.00134,140,0.31,789
+26,"wwbn, wwbn avideo, video platform, avideo, json php",337,0,0.00125,269,0.29,48
+13,"kernel following, linux kernel, vulnerability resolved, kasan, skb",20291,13,0.00114,7553,0.27,11497
+129,"versions siplus, siplus, way vulnerability, ruoyi, leads path",1428,1,0.00113,413,0.27,941
+88,"component mcp, tool manipulation, responded vulnerability, metagpt, server manipulation",360,0,0.00099,255,0.23,66
+15,"desktop protocol, rdp, implementation remote, remote desktop, protocol prior",345,0,0.00096,155,0.23,69
+135,"totolink, vulnerability totolink, file cgi-bin, cgi manipulation, boafrm",1475,1,0.00093,279,0.22,1153
+64,"openfga, senders, non-owner, authorization permission, assistant prior",953,0,0.00093,840,0.22,72
+138,"sourcecodester, vulnerability sourcecodester, code-projects, leads sql, critical sourcecodester",9028,6,0.0009,2002,0.21,6766
+107,"imagemagick, hdf5, trigger vulnerabilities, openimageio, software used",4165,2,0.00089,1357,0.21,2324
+55,"kibana, capec-130, allocation capec-130, kibana lead, elasticsearch",294,0,0.00084,176,0.2,81
+84,"apache tomcat, apache traffic, traffic server, thrift, issue allocation",361,0,0.00066,148,0.15,110
+85,"xmldom, xmldom xmldom, o_excl, cpanel, w3c",399,0,0.00065,214,0.15,112
+37,"possible bounds, write missing, read missing, missing bounds, check lead",2077,1,0.00061,238,0.14,1750
+96,"unauthenticated cross, subscriber cross, versions unauthenticated, versions subscriber, contributor cross",557,0,0.00057,357,0.13,129
+71,"unbound, nlnet, nlnet labs, read dns, dnssec",373,0,0.00056,168,0.13,133
+2,"splunk, splunk enterprise, soar, does hold, enterprise versions",322,0,0.00054,145,0.13,139
+38,"modem possible, connected rogue, station controlled, attacker additional, rogue base",286,0,0.0005,82,0.12,152
+91,"gpac, crafted mp4, version abi-16, abi-16, mp4 file",327,0,0.00043,116,0.1,179
+29,"aion, hcl aion, hcl, myxalytics, hcl launch",359,0,0.00043,174,0.1,178
+33,"allows privilege, privilege assignment, incorrect privilege, assignment vulnerability, unauthenticated privilege",333,0,0.00042,116,0.1,181
+78,"amf, mme, sbi, udr, udm",498,0,0.0004,282,0.09,191
+87,"chain present, theme installed, installed target, files retrieve, vulnerable php",288,0,0.0004,70,0.09,194
+104,"concrete cms, leading credentials, web altering, trusted session, altering intended",3576,1,0.00039,702,0.09,2745
+103,"rtls, build later, locating, contiki-ng, qnap operating",370,0,0.00037,132,0.09,210
+10,"vulnerability oracle, solaris, impacts cvss, compromise oracle, cvss base",461,0,0.00037,169,0.09,210
+121,"accesses injected, escaping makes, scripts pages, injected page, pages execute",393,0,0.00036,129,0.08,220
+58,"allows cross, site request, forgery issue, csrf vulnerability, versions cross-site",3516,1,0.00034,318,0.08,3136
+14,"kasan, kernel following, hdev, skb, linux kernel",518,0,0.00033,205,0.08,238
+49,"openproject, plane open-source, references idor, wekan, open-source project",626,0,0.00032,273,0.08,249
+77,"allows retrieve, embedded sensitive, sent data, retrieve embedded, information sent",403,0,0.00031,108,0.07,254
+25,"exists parsing, dgn, target visit, current process, vulnerability target",312,0,0.00027,10,0.06,300
+82,"ibm concert, x-force ibm, concert, verify access, ibm verify",410,0,0.00027,89,0.06,292
+94,"appointment, appointment booking, booking calendar, booking plugin, calendar wordpress",679,0,0.00027,295,0.06,298
+76,"unauthenticated sensitive, bizhub, versions exposure, actor vulnerability, cwe-200 exposure",492,0,0.00026,142,0.06,312
+9,"mattermost versions, mattermost, mattermost advisory, mattermost fails, playbook",499,0,0.00025,158,0.06,317
+112,"access uncontrolled, privilege local, enable escalation, element intel, potentially enable",398,0,0.00025,61,0.06,320
+86,"rack, multer, vulnerable prototype, dos injecting, arbitrary properties",541,0,0.00025,182,0.06,315
+73,"praisonai, multi-agent, vllm, picklescan, backdoor inserted",1044,0,0.00024,597,0.06,332
+41,"exynos, snapdragon, mobile processor, modem exynos, iot snapdragon",405,0,0.00024,60,0.06,338
+133,"add_query_arg appropriate, scripting use, successfully trick, execute successfully, add_query_arg",441,0,0.00023,67,0.05,356
+95,"shortcode attributes, embed allow, post shortcode, shortcode embed, attacks used",417,0,0.00023,43,0.05,355
+81,"redirection untrusted, site open, url redirection, backstage, untrusted site",533,0,0.00023,125,0.05,354
+62,"affected out-of-bounds, opens manipulated, interaction victim, mitigations aslr, bypass mitigations",491,0,0.00023,107,0.05,351
+36,"levels issue, exploiting incorrectly, security levels, allows exploiting, control security",523,0,0.00022,117,0.05,359
+92,"vim, source command, vim open, gpac, line text",449,0,0.00022,85,0.05,361
+109,"bios, smi, smm, poweredge, dell poweredge",427,0,0.00022,60,0.05,359
+130,"melsec, versions mitsubishi, melsec iq-r, iq-r, iq-r series",527,0,0.00021,115,0.05,385
+45,"allows object, object injection, vulnerability themerex, themerex, deserialization untrusted",670,0,0.0002,180,0.05,403
+56,"dangerous type, file dangerous, shell web, upload web, type vulnerability",507,0,0.0002,85,0.05,413
+139,"code-projects, blood bank, hospital management, critical code-projects, blood",570,0,0.0002,149,0.05,404
+98,"argo, kyverno, openshift, gitops, cluster-wide",1039,0,0.0002,513,0.05,413
+40,"check lead, possible missing, service missing, missing permission, app missing",456,0,0.00019,13,0.04,433
+54,"does csrf, csrf check, make logged, logged admin, sanitisation escaping",473,0,0.00018,15,0.04,455
+119,"parameter outputting, page leading, scripting used, leading reflected, used high",473,0,0.00018,25,0.04,444
+59,"cobalt, exists parsing, gimp, dxf, parsing dxf",520,0,0.00018,63,0.04,448
+74,"permission control, service confidentiality, affect service, permission verification, module impact",578,0,0.00017,86,0.04,475
+128,"widget versions, accesses injected, elementor plugin, widgets versions, injected page",704,0,0.00015,117,0.04,559
+105,"prior cross-site, xss stored, microweber, openemr, pimcore",653,0,0.00014,48,0.03,599
+3,"require statement, program php, filename include, include require, php local",1019,0,0.00014,405,0.03,606
+4,"mysql server, protocols compromise, multiple protocols, impacts cvss, product oracle",1056,0,0.00012,210,0.03,710
+70,"forgery issue, allows server, contains server-side, server request, allows ssrf",1438,0,0.00012,589,0.03,708
+120,"campcodes, vulnerability campcodes, campcodes online, critical campcodes, campcodes complete",737,0,0.00012,43,0.03,683
+114,"attacks unfiltered_html, capability disallowed, escape settings, disallowed example, unfiltered_html capability",745,0,0.00012,46,0.03,679
+52,"additional sql, append additional, queries existing, existing queries, preparation existing",1462,0,0.0001,548,0.02,807
+117,"affected site, make remote, site server, missing file, wp-config php",1376,0,0.0001,403,0.02,866
+57,"incorrect nonce, request granted, forgery versions, missing incorrect, granted trick",1083,0,0.0001,241,0.02,833
+75,"smr, prior smr, release allows, implicit intent, application components",1100,0,9e-05,134,0.02,935
+132,"accesses injected, injected page, attributes makes, supplied attributes, scripts pages",1609,0,8e-05,468,0.02,1018
+99,"unauth reflected, versions unauth, auth admin, unauth, admin stored",1091,0,8e-05,72,0.02,1006
+101,"phpgurukul, leads sql, searchdata, file admin, argument searchdata",1134,0,8e-05,95,0.02,1023
+113,"enable denial, vulnerable resulting, special internal, subsequent confidentiality, result potentially",1579,0,6e-05,258,0.01,1301
+116,"vulnerable unauthorized, wordpress vulnerable, including makes, missing capability, subscriber-level",3630,0,5e-05,1358,0.01,1828
+35,"levels issue, exploiting incorrectly, allows exploiting, security levels, control security",2642,0,5e-05,619,0.01,1832
+111,"tenda, goform, file goform, contain stack, parameter goform",2642,0,4e-05,568,0.01,2050
+32,"generation cross-site, neutralization input, page generation, input web, generation xss",7006,0,2e-05,988,0.0,5655

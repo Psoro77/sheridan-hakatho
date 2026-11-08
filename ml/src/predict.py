@@ -48,7 +48,9 @@ def main() -> None:
     comps = component_scores(f, meta)
     p = np.mean(list(comps.values()), axis=0)
     order_score = (np.mean([rank_pct(v) for v in comps.values()], axis=0) if len(comps) > 1 else p)
-    order = final_order(order_score, f["n_exploit_flags"] > 0, f["desc_itw_phrase"] == 1, meta["k_flag"], meta["itw_first"])
+    frac = meta.get("flag_frac")
+    k_flag = None if frac is None else round(frac * TOP_K)
+    order = final_order(order_score, f["n_exploit_flags"] > 0, f["desc_itw_phrase"] == 1, k_flag, meta["itw_first"])
 
     out = f[["cve_id"]].copy()
     out["p_exploit"] = p
@@ -64,7 +66,7 @@ def main() -> None:
     top.to_csv(ML_DIR / "top500.csv", index=False)
     tf = f.set_index("cve_id").loc[top["cve_id"]]
     print(f"wrote top500.csv ({len(top)} unique IDs, all in scoreboard) | model={meta['experiment']} "
-          f"strategy={meta['strategy']} k_flag={meta['k_flag']}")
+          f"strategy={meta['strategy']} flag_frac={frac} k_flag={k_flag}")
     print(f"top500 composition: itw={int(tf['desc_itw_phrase'].sum())} flagged={int((tf['n_exploit_flags'] > 0).sum())} "
           f"by month={tf['snapshot_month'].value_counts().sort_index().to_dict()}")
 

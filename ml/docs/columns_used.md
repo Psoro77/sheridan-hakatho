@@ -31,10 +31,15 @@ every history cutoff is before publication.
 Decisions (two-fold validation, `outputs/experiments.csv`):
 - **CVSS / CWE: rejected (leakage).** They give +4 to +9 hits, but 100% of exploited CVEs are NIST-analysed
   with no blank CVSS/CWE (vs 65% and ~4% of the rest), and only 19% of 2026 scoreboard scores are NIST-sourced
-  vs 37 to 48% in training. The gain reflects NIST's post-attack analysis. (`cvss3_source`/`nvd_status` were
+  vs 37 to 48% in training. The gain reflects NIST's post-attack analysis.
+  (Reported in `outputs/experiments.csv` as `L8_...caution`, marked not selectable.) (`cvss3_source`/`nvd_status` were
   used only for this diagnostic, never as features.)
-- **`desc_itw_phrase`: kept as a ranking rule** (these rows go first). +3 to +5 hits on both folds for every
-  model; the phrases come from CNAs at publication (VulnCheck, MITRE, GitHub, Meta).
+- **`desc_itw_phrase`: used, as a DISCLOSED RISK.** It appears as a ranking rule (these rows go first), as an
+  LR feature, inside `prior_lr_score`/`prior_gbm_score` (keyword flags), in `sib_any_itw`, and implicitly in
+  the embedded description text. Evidence is thin: 24 rows / 5 positives on valid. The phrases are written
+  by CNAs (VulnCheck, MITRE, GitHub advisories, Meta), but descriptions are today's versions and CNAs can
+  edit records after publication, so we cannot prove the phrase was there at the snapshot. On the
+  scoreboard it affects 19 slots of 500.
 
 ## Never used
 
