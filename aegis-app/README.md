@@ -146,7 +146,7 @@ npm run anchor:snapshot        # sends the memo and writes public/data/anchor.js
 node scripts/anchor-snapshot.mjs --dry-run   # recompute hashes only
 ```
 
-Check it by hand: `git show HEAD:ml/top500.csv | sha256sum` equals `manifest.files["ml/top500.csv"].lf`; `sha256sum` of `anchor.json`'s canonical manifest is the memo; open the explorer link for `anchors[0].signature`.
+Check it by hand: `git show HEAD:ml/top500.csv | sha256sum` equals `manifest.files["ml/top500.csv"].lf`; `node scripts/anchor-snapshot.mjs --dry-run` recomputes the manifest hash, which must equal the hash in the memo; open the explorer link for `anchors[0].signature`.
 
 Limits:
 - The anchor proves the files existed in this form **from the anchor time** (Nov 8, 2026). It does not prove they predate the Nov 4 label date; the Git history and the Devpost submission time are the evidence for that.
