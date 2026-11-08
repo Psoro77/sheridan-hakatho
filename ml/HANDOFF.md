@@ -37,7 +37,13 @@ into TigerData, or to send you the file directly. `clusters.csv` is in git.
 | `impact_score` | float 0-1 | technical impact (CVSS or attack keywords) | display only, NOT used in the ranking |
 | `cluster_id` | int | vulnerability family; `-1` = no family | join to `vuln_clusters` |
 | `cluster_name` | text | keyword label of the family | raw keywords, see §4 |
-| `reasons` | JSON list of up to 3 strings | why it ranks high, e.g. `"5.1% of past ServiceNow CVEs were exploited (6x typical)"` | show as-is. Low-ranked CVEs still get reasons, so show them mainly for the top tiers |
+| `reasons` | JSON list of exactly 3 strings, each with a number | why it ranks where it does, e.g. `"5.1% of past ServiceNow CVEs were exploited (6x typical)"`, `"Proof-of-concept code on GitHub (36 of 1,429 such 2024-25 CVEs were exploited, 16x average)"` | show as-is. Top tiers get the model's drivers. Low-ranked CVEs get numeric facts that explain why they're low |
+| `confidence` | text | one sentence of evidence for the rank, e.g. `"Ranked #151 of 72,670 (top 500). In 2025 validation, 13 of 195 CVEs ranked in this band (6.67%) were later exploited, 45x the average."` | **show on every detail page**. This is the honest "how sure are we", instead of `p_exploit` |
+| `rank_band` | text | `top 100`, `top 500`, `top 1,500`, `top 10%`, `rest` | |
+| `band_valid_rate` | float | share of 2025 validation CVEs in that band that were exploited (top 100: 23%, top 500: 6.7%, rest: 0.04%) | use for a "hit rate" bar |
+| `nearest_kev_cve` | text | the most similar CVE that was already known exploited (Granite embedding similarity, KEV up to 2025-12-31) | "Looks like: CVE-2023-48788". Link it to NVD |
+| `nearest_kev_product` | text | vendor and product of that CVE, e.g. `Fortinet FortiClient EMS` | |
+| `nearest_kev_sim` | float 0-1 | cosine similarity of the two descriptions | above about 0.85 = very close wording. Show 2 decimals |
 | `shap_top` | JSON object | the model weight behind each reason | debugging / tooltip only |
 | `kev_likelihood` | float 0-1 | percentile of `p_exploit` | **use this** as the BOD "likelihood" factor |
 | `technical_impact` | float 0-1 | same as `impact_score` | BOD "impact" factor |
@@ -78,7 +84,9 @@ Say "about 2.4x the best standard ranking". Don't promise precision. The confide
 `docs/findings.md`. Keep the wording consistent with it.
 
 ## 6. Things NOT to do in the UI
-- Don't present `p_exploit` as a calibrated "97% chance". Use the tier or "top N".
+- Don't present `p_exploit` as a calibrated "97% chance". Use the tier, "top N" or the `confidence` sentence.
+- The validation band rates come from 2025. The 2026 base rate is about half (CVE volume doubled), so say
+  "in 2025 validation" exactly as the `confidence` text does.
 - Don't show CVSS as a reason for the ranking. The model does not use CVSS; it's leakage-prone (see
   `docs/columns_used.md`).
 - Don't re-rank the top 500 in anything labelled "model ranking". It must match the submitted `top500.csv`.

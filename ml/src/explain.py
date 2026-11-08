@@ -5,6 +5,7 @@ python -m src.explain
 from __future__ import annotations
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
@@ -36,16 +37,45 @@ FLAG_TEXT = {"exploitdb": "Exploit published on Exploit-DB", "metasploit": "Meta
 EXPLOIT_AUTOMATION = {"epss_pct", "exploitdb", "metasploit", "nuclei", "poc_github", "n_exploit_flags"}
 
 
+# Evidence for binary reasons: KEV rate of 2024-25 CVEs with the same trait (train_final rows, labels known
+# by 2025-12-31, i.e. all before the scoreboard). Filled in main().
+_BIN: dict = {}
+BIN_FEATS = [*KW_TEXT, *FLAG_TEXT, "exploit_archive", "desc_itw_phrase", "sib_any_flag", "sib_any_itw"]
+
+
+def hist_rate(feat: str) -> str:
+    if feat not in _BIN:
+        return ""
+    hits, n, lift = _BIN[feat]
+    return f" ({hits} of {n:,} such 2024-25 CVEs were exploited, {lift:.0f}x average)"
+
+
+def top_pct(v) -> str:
+    """'top X%' for the upper half, 'bottom X%' for the lower half (v is a 0-1 percentile)."""
+    v = float(v)
+    if v < 0.5:
+        return f"bottom {max(0.1, round(v * 100, 1)):g}%"
+    return f"top {max(0.1, round((1 - v) * 100, 1)):g}%"
+
+
+STRONG = 0.8  # percentile-model reasons are only stated when the CVE is in the top 20% on that model
+
+
+def nearest_text(r: pd.Series) -> str:
+    return f"{r['nearest_kev_cve']}, {r['nearest_kev_product']}, similarity {r['nearest_kev_sim']:.2f}"
+
+
 def reason_text(feat: str, r: pd.Series) -> str | None:
     v = r.get(feat)
     if feat in NOT_A_REASON:
         return None
     if feat in KW_TEXT:
-        return KW_TEXT[feat] if v == 1 else None
+        return KW_TEXT[feat] + hist_rate(feat) if v == 1 else None
     if feat in FLAG_TEXT:
-        return FLAG_TEXT[feat] if v == 1 else None
+        return FLAG_TEXT[feat] + hist_rate(feat) if v == 1 else None
     if feat == "exploit_archive":
-        return "Exploit published on Exploit-DB or Metasploit" if (r.get("exploitdb") == 1 or r.get("metasploit") == 1) else None
+        return ("Exploit published on Exploit-DB or Metasploit" + hist_rate(feat)
+                if (r.get("exploitdb") == 1 or r.get("metasploit") == 1) else None)
     if feat == "n_exploit_flags":
         return (f"{int(v)} public exploit source" + ("s" if v > 1 else "")) if v and v > 0 else None
     if feat == "epss_pct":
@@ -68,17 +98,19 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
     if feat == "desc_product_kev_12m":
         return f"{r['desc_product']} had {int(v)} KEV additions in the past year" if v and v > 0 else None
     if feat == "prior_lr_score":
-        return "Vendor, product and description resemble past exploited CVEs"
+        return (f"Vendor, product and wording rank in the {top_pct(v)} for resemblance to past exploited CVEs; "
+                f"closest is {nearest_text(r)}") if pd.notna(v) and v >= STRONG else None
     if feat == "prior_gbm_score":
-        return "Matches past attack patterns (targeted vendor + attack type + product)"
+        return (f"Attack-pattern model (vendor + attack type + product) ranks it in the {top_pct(v)}"
+                if pd.notna(v) and v >= STRONG else None)
     if feat == "kev_vendor_kev_rate":
         prior = _PRIORS.get(feat, 0)
         return (f"{v:.1%} of past {r['vendor']} CVEs were exploited ({v / prior:.0f}x typical)"
                 if prior and v and v >= 3 * prior else None)
     if feat == "sib_any_flag":
-        return "A same-day CVE from this vendor already has exploit code" if v == 1 else None
+        return "A same-week CVE from this vendor already has exploit code" + hist_rate(feat) if v == 1 else None
     if feat == "sib_any_itw":
-        return "A same-day CVE from this vendor is reported exploited" if v == 1 else None
+        return "A same-week CVE from this vendor is reported exploited" + hist_rate(feat) if v == 1 else None
     if feat == "kev_vendor_fresh":
         return f"{r['vendor']} had {int(v)} KEV additions this year before this CVE's snapshot" if v and v > 0 else None
     if feat == "assigner_kev_fresh":
@@ -90,22 +122,107 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
     if feat == "sib_batch_size":
         return f"Part of a {int(v) + 1}-CVE vendor release (often chained bugs)" if v and v > 0 else None
     if feat == "sib_max_text_lr":
-        return "A same-day sibling CVE reads like past exploited ones"
+        return (f"A same-week CVE from this vendor reads like past exploited ones ({top_pct(v)})"
+                if pd.notna(v) and v >= STRONG else None)
     if feat in ("kev_sim_max", "kev_sim_mean_top5"):
-        return f"Similar to past KEV entries ({r['kev_sim_max']:.2f})" if pd.notna(r.get("kev_sim_max")) else None
+        return f"Closest past exploited CVE: {nearest_text(r)}" if pd.notna(r.get("nearest_kev_sim")) else None
     if feat == "text_lr_score":
-        return "Description reads like past exploited vulnerabilities"
+        return f"Description reads like past exploited vulnerabilities ({top_pct(v)})" if pd.notna(v) and v >= STRONG else None
     if feat == "cluster_kev_rate":
-        return f"In a vulnerability family with a high attack rate ({r.get('cluster_name', '')})"
+        name = str(r.get("cluster_name", ""))[:60]
+        return (f"In vulnerability family \"{name}\": {v:.1%} of its 2022-25 CVEs were exploited"
+                if pd.notna(v) and r.get("cluster_id", -1) >= 0 else None)
     if feat == "desc_itw_phrase":
-        return "Vendor reports exploitation in the wild" if v == 1 else None
+        return "Vendor reports exploitation in the wild" + hist_rate(feat) if v == 1 else None
     if feat == "cwe_kev_rate":
         return "Weakness type often seen in KEV"
     if feat.startswith("cvss_") or feat.startswith("cvss"):
         return "Severe CVSS characteristics"
     if feat.startswith("cwe_"):
         return f"Weakness CWE-{feat[4:]}" if v == 1 else None
-    return feat
+    return None
+
+
+def binary_rates() -> dict:
+    """(hits, n, lift) for each binary reason trait among train_final CVEs (published 2024-01..2025-09,
+    labels known by 2025-12-31: all before the scoreboard)."""
+    tr = pd.read_parquet(PROCESSED_DIR / "features_train_final.parquet")
+    tr["exploit_archive"] = tr[["exploitdb", "metasploit"]].max(axis=1)
+    base = tr["label"].mean()
+    out = {}
+    for c in BIN_FEATS:
+        if c in tr:
+            m = tr[c] == 1
+            if m.sum():
+                out[c] = (int(tr.loc[m, "label"].sum()), int(m.sum()), float(tr.loc[m, "label"].mean() / base))
+    return out
+
+
+def nearest_kev(f: pd.DataFrame) -> pd.DataFrame:
+    """Closest past exploited CVE by Granite embedding (cosine), among KEV entries added by each row's
+    history cutoff (2025-12-31 for the scoreboard). This is the concrete 'looks like' evidence."""
+    from . import data_io
+    from .embed import load_embeddings
+
+    emb, idx = load_embeddings()
+    kev = data_io.load_kev()
+    out = pd.DataFrame(index=f.index, columns=["nearest_kev_cve", "nearest_kev_product", "nearest_kev_sim"])
+    for cutoff, ix in f.groupby("history_cutoff").groups.items():
+        k = kev[(kev["date_added"] <= cutoff) & kev["cve_id"].isin(idx.index)].reset_index(drop=True)
+        K = emb[idx.loc[k["cve_id"]].to_numpy()].astype(np.float32)
+        rows = f.loc[ix, "cve_id"].map(idx)
+        ok = rows.notna().to_numpy()
+        X = emb[rows[ok].astype(int).to_numpy()].astype(np.float32)
+        best, sim = np.empty(len(X), dtype=int), np.empty(len(X))
+        for s in range(0, len(X), 8192):
+            S = X[s : s + 8192] @ K.T
+            best[s : s + 8192], sim[s : s + 8192] = S.argmax(axis=1), S.max(axis=1)
+        sub = np.asarray(ix)[ok]
+        out.loc[sub, "nearest_kev_cve"] = k.loc[best, "cve_id"].to_numpy()
+        out.loc[sub, "nearest_kev_product"] = (k.loc[best, "vendor"].fillna("") + " " + k.loc[best, "product"].fillna("")).str.strip().to_numpy()
+        out.loc[sub, "nearest_kev_sim"] = sim.round(3)
+    out["nearest_kev_sim"] = out["nearest_kev_sim"].astype(float)
+    return out
+
+
+# Rank bands (top-k on the 72,670-row scoreboard) and how often 2025 validation CVEs ranked in the same
+# share of their fold were later exploited (folds V1 + V2, out-of-time, selected model and strategy).
+BANDS = [(100, "top 100"), (500, "top 500"), (1500, "top 1,500"), (7267, "top 10%"), (None, "rest")]
+
+
+def band_stats(n_rows: int) -> pd.DataFrame:
+    vs = pd.read_parquet(OUTPUT_DIR / "valid_scores.parquet")
+    vs = vs[vs["fold"].isin(["V1", "V2"])]
+    parts = []
+    for _, g in vs.groupby("fold"):
+        r = g["score_model_selected"].rank(ascending=False, method="first") / len(g)
+        parts.append(pd.DataFrame({"frac": r.to_numpy(), "label": g["label"].to_numpy()}))
+    v = pd.concat(parts)
+    rows, lo = [], 0.0
+    base = v["label"].mean()
+    for k, name in BANDS:
+        hi = 1.0 if k is None else k / n_rows
+        m = (v["frac"] > lo) & (v["frac"] <= hi)
+        hits, n = int(v.loc[m, "label"].sum()), int(m.sum())
+        rows.append({"band": name, "lo": lo, "hi": hi, "valid_hits": hits, "valid_n": n,
+                     "valid_rate": hits / n if n else 0.0, "lift": (hits / n / base) if n else 0.0})
+        lo = hi
+    return pd.DataFrame(rows)
+
+
+def fact_reasons(r: pd.Series) -> list[str]:
+    """Numeric facts used to fill a CVE's reasons when fewer than 3 model drivers apply (mostly
+    low-ranked CVEs). They justify the rank either way."""
+    out = []
+    if pd.notna(r.get("epss_pct")):
+        out.append(f"EPSS in the {top_pct(r['epss_pct'])} of its month")
+    nf = int(r.get("n_exploit_flags", 0) or 0)
+    out.append(f"Public exploit code at snapshot: {nf} of 4 sources")
+    if pd.notna(r.get("nearest_kev_sim")):
+        out.append(f"Closest past exploited CVE: {nearest_text(r)}")
+    vk = r.get("vendor_kev_count")
+    out.append(f"Vendor {r['vendor']}: {int(vk or 0)} past KEV entries")
+    return out
 
 
 def impact_score(raw: pd.DataFrame, f: pd.DataFrame) -> pd.Series:
@@ -170,23 +287,47 @@ def main() -> None:
     f["cluster_name"] = f["cluster_id"].map(names).fillna("unclustered")
 
     sv = contributions(f, meta)[cols]
+    _BIN.update(binary_rates())
+    f = pd.concat([f, nearest_kev(f)], axis=1)
+    bands = band_stats(len(f))
+    bands.to_csv(OUTPUT_DIR / "rank_bands.csv", index=False)
+    print(bands.to_string(index=False))
+    frac = f["rank"] / len(f)
+    bi = np.searchsorted(bands["hi"].to_numpy(), frac.to_numpy(), side="left")
+    b = bands.iloc[bi].reset_index(drop=True)
+    b.index = f.index
+    f["rank_band"] = b["band"]
+    f["band_valid_rate"] = b["valid_rate"].round(4)
+    confidence = [
+        (f"Ranked #{int(r['rank']):,} of {len(f):,} ({r['rank_band']}). In 2025 validation, {int(bb['valid_hits'])} of "
+         f"{int(bb['valid_n']):,} CVEs ranked in this band ({bb['valid_rate']:.2%}) were later exploited, "
+         f"{bb['lift']:.{0 if bb['lift'] >= 10 else 1}f}x the average.")
+        for (_, r), (_, bb) in zip(f[["rank", "rank_band"]].iterrows(), b.iterrows())
+    ]
 
     reasons, shap_top = [], []
     for i in f.index:
         row, s = f.loc[i], sv.loc[i].sort_values(ascending=False)
         rs, top = [], {}
         if meta.get("itw_first") and row.get("desc_itw_phrase") == 1:
-            rs.append("Vendor reports exploitation in the wild")
+            rs.append("Vendor reports exploitation in the wild" + hist_rate("desc_itw_phrase"))
             top["desc_itw_phrase"] = round(float(sv.loc[i].get("desc_itw_phrase", 0)), 4)
         for feat, val in s.items():
             if val <= 0 or len(rs) == 3:
                 break
             t = reason_text(feat, row)
-            if t and t not in rs:
+            if t and t not in rs and not any(str(row["nearest_kev_cve"]) in x for x in rs if "Closest" in t):
                 rs.append(t)
                 top[feat] = round(float(val), 4)
+        for t in fact_reasons(row):  # fill to 3 with numeric facts (never repeats the nearest-CVE evidence)
+            if len(rs) == 3:
+                break
+            if t not in rs and not (t.startswith("Closest") and any(row["nearest_kev_cve"] in x for x in rs)):
+                rs.append(t)
         reasons.append(json.dumps(rs))
         shap_top.append(json.dumps(top))
+    bad = [r for r in reasons if len(json.loads(r)) < 3 or not all(re.search(r"\d", x) for x in json.loads(r))]
+    assert not bad, f"{len(bad)} rows lack 3 numeric reasons, e.g. {bad[:2]}"
 
     n = len(f)
     tier = np.where(f["rank"] <= 100, "Fix now", np.where(f["rank"] <= 500, "This week", "Monitor"))
@@ -199,6 +340,10 @@ def main() -> None:
         "epss_pct": f["epss_pct"].round(4), "exploit_flags": exploit_flags,
         "impact_score": impact_score(raw, f), "cluster_id": f["cluster_id"], "cluster_name": f["cluster_name"],
         "reasons": reasons, "shap_top": shap_top,
+        # Evidence (round 5): the closest past exploited CVE and the validation hit rate of the rank band.
+        "nearest_kev_cve": f["nearest_kev_cve"], "nearest_kev_product": f["nearest_kev_product"],
+        "nearest_kev_sim": f["nearest_kev_sim"], "rank_band": f["rank_band"],
+        "band_valid_rate": f["band_valid_rate"], "confidence": confidence,
         # BOD 26-04 factor mapping for the UI (asset_exposure comes from the app's inventory).
         "kev_likelihood": f["p_exploit"].rank(pct=True).round(4),
         "exploit_automation": sv[ea_cols].sum(axis=1).round(4),

@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS cve_predictions (
     exploit_automation DOUBLE PRECISION,
     technical_impact DOUBLE PRECISION
 );
+-- Evidence columns (round 5). ALTER keeps an older table compatible.
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS nearest_kev_cve TEXT;
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS nearest_kev_product TEXT;
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS nearest_kev_sim DOUBLE PRECISION;
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS rank_band TEXT;
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS band_valid_rate DOUBLE PRECISION;
+ALTER TABLE cve_predictions ADD COLUMN IF NOT EXISTS confidence TEXT;
+ALTER TABLE IF EXISTS vuln_clusters ADD COLUMN IF NOT EXISTS n_train INTEGER;
 CREATE TABLE IF NOT EXISTS vuln_clusters (
     cluster_id INTEGER PRIMARY KEY,
     name TEXT,
