@@ -51,11 +51,11 @@ FEATURE_GROUPS = {
     "vendor_kw": [
         "assigner_kev_count", "assigner_kev_rate", "assigner_n_hist",
         "desc_vendor_kev_count", "desc_vendor_kev_rate", "vendor_kev_count",
-        "desc_product_kev_count", "desc_product_kev_rate", "desc_product_kev_12m", "kev_vendor_kev_12m",
+        "desc_product_kev_count", "desc_product_kev_rate", "desc_product_kev_12m", "kev_vendor_kev_12m", "kev_vendor_kev_rate",
         *PRODUCT_KEYWORDS, *ATTACK_KEYWORDS, "desc_len",
     ],
     "text": ["kev_sim_max", "kev_sim_mean_top5", "text_lr_score"],
-    "prior": ["prior_lr_score"],
+    "prior": ["prior_lr_score", "prior_gbm_score"],
     "sibling": ["sib_batch_size", "sib_max_text_lr", "sib_any_flag", "sib_any_itw", "sib_max_epss_pct"],
     "cluster": ["cluster_kev_rate"],
     "caution": [
@@ -162,6 +162,7 @@ def rate_table(hist: pd.DataFrame, key: str, cutoff: pd.Timestamp) -> tuple[pd.D
 # ---------------------------------------------------------------- feature blocks
 _MATCHERS: dict = {}
 _HIST_H: dict = {}
+_ASSIGNER_VENDOR: dict = {}
 
 
 def matcher_for(kev: pd.DataFrame, cutoff: pd.Timestamp) -> Matcher:
@@ -175,6 +176,15 @@ def hist_as_of(hist: pd.DataFrame, kev: pd.DataFrame, cutoff: pd.Timestamp) -> p
     if cutoff not in _HIST_H:
         h = hist[hist["published"] <= cutoff].copy()
         h[["desc_vendor", "desc_product", "kev_vendor"]] = matcher_for(kev, cutoff).match(h["description"])
+        # Assigner -> KEV vendor (e.g. psirt@sonicwall.com -> SonicWall), from past KEV CVEs only.
+        kh = h[h["date_added"] <= cutoff][["cve_id", "assigner_org"]].merge(kev[["cve_id", "vendor"]], on="cve_id")
+        amap = {}
+        for org, s in kh.groupby("assigner_org")["vendor"]:
+            vc = s.value_counts()
+            if vc.iloc[0] >= 3 and vc.iloc[0] / len(s) >= 0.5:
+                amap[org] = vc.index[0]
+        _ASSIGNER_VENDOR[cutoff] = amap
+        h["kev_vendor"] = h["kev_vendor"].fillna(h["assigner_org"].map(amap))
         _HIST_H[cutoff] = h
         print(f"  history as of {cutoff.date()}: {len(h):,} CVEs, vendor matched {h['kev_vendor'].notna().mean():.1%}")
     return _HIST_H[cutoff]
@@ -185,7 +195,7 @@ def history_features(df: pd.DataFrame, hist: pd.DataFrame, kev: pd.DataFrame) ->
     df = df.assign(assigner_org=df["assigner"].map(assigner_org), cwe_primary=primary_cwe(df["cwe_ids"]))
     cols = ("assigner_kev_count", "assigner_kev_rate", "assigner_n_hist", "desc_vendor_kev_count",
             "desc_vendor_kev_rate", "cwe_kev_rate", "desc_product_kev_count", "desc_product_kev_rate",
-            "desc_product_kev_12m", "kev_vendor_kev_12m", "kev_vendor_kev_count")
+            "desc_product_kev_12m", "kev_vendor_kev_12m", "kev_vendor_kev_count", "kev_vendor_kev_rate")
     for col in cols:
         out[col] = np.nan
     for c in ("desc_vendor", "desc_product", "kev_vendor"):
@@ -194,6 +204,7 @@ def history_features(df: pd.DataFrame, hist: pd.DataFrame, kev: pd.DataFrame) ->
         m = matcher_for(kev, cutoff)
         h = hist_as_of(hist, kev, cutoff)
         sub = pd.concat([df.loc[idx], m.match(df.loc[idx, "description"])], axis=1)
+        sub["kev_vendor"] = sub["kev_vendor"].fillna(sub["assigner_org"].map(_ASSIGNER_VENDOR[cutoff]))
         for c in ("desc_vendor", "desc_product", "kev_vendor"):
             out.loc[idx, c] = sub[c].to_numpy()
         kev_past = m.kev
@@ -216,6 +227,8 @@ def history_features(df: pd.DataFrame, hist: pd.DataFrame, kev: pd.DataFrame) ->
         out.loc[idx, "desc_product_kev_12m"] = sub["desc_product"].map(tok_recent).fillna(0).to_numpy()
         out.loc[idx, "kev_vendor_kev_count"] = sub["kev_vendor"].map(kev_past["vendor"].value_counts()).fillna(0).to_numpy()
         out.loc[idx, "kev_vendor_kev_12m"] = sub["kev_vendor"].map(recent["vendor"].value_counts()).fillna(0).to_numpy()
+        g, prior = rate_table(h, "kev_vendor", cutoff)
+        out.loc[idx, "kev_vendor_kev_rate"] = sub["kev_vendor"].map(g["rate"]).fillna(prior).to_numpy()
         # CWE (caution group)
         g, prior = rate_table(h, "cwe_primary", cutoff)
         out.loc[idx, "cwe_kev_rate"] = sub["cwe_primary"].map(g["rate"]).fillna(prior).to_numpy()
@@ -266,7 +279,10 @@ def caution_features(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def embedding_features(df: pd.DataFrame, emb: np.ndarray, idx: pd.Series, kev: pd.DataFrame) -> pd.DataFrame:
+def embedding_features(df: pd.DataFrame, emb: np.ndarray, idx: pd.Series, kev: pd.DataFrame,
+                       history_rows: bool = False) -> pd.DataFrame:
+    """history_rows=True (prior-model training rows only): a row already in past KEV would match
+    itself, so its similarity is set to NaN instead of asserting."""
     out = pd.DataFrame(index=df.index, columns=["kev_sim_max", "kev_sim_mean_top5"], dtype=float)
     rows = df["cve_id"].map(idx)
     for cutoff, ix in df.groupby("history_cutoff").groups.items():
@@ -285,7 +301,11 @@ def embedding_features(df: pd.DataFrame, emb: np.ndarray, idx: pd.Series, kev: p
             mx[s : s + 8192], top5[s : s + 8192] = part[:, -1], part.mean(axis=1)
         out.loc[sub_ix, "kev_sim_max"] = mx
         out.loc[sub_ix, "kev_sim_mean_top5"] = top5
-        assert not df.loc[sub_ix, "cve_id"].isin(kev_set).any(), "row already in past KEV"
+        self_hit = df.loc[sub_ix, "cve_id"].isin(kev_set).to_numpy()
+        if history_rows:
+            out.loc[sub_ix[self_hit], ["kev_sim_max", "kev_sim_mean_top5"]] = np.nan
+        else:
+            assert not self_hit.any(), "row already in past KEV"
     return out
 
 
@@ -377,6 +397,58 @@ def prior_lr_features(df: pd.DataFrame, f: pd.DataFrame, hist: pd.DataFrame, kev
     return out
 
 
+# Tabular features the tree prior uses; for history rows each is computed as of the end of the
+# year BEFORE that row's publication (same rule as scored rows), so no row sees its own label.
+PRIOR_GBM_COLS = [
+    *KW_COLS, "desc_len", "assigner_kev_rate", "assigner_n_hist", "desc_vendor_kev_rate",
+    "desc_product_kev_rate", "desc_product_kev_count", "desc_product_kev_12m",
+    "kev_vendor_kev_count", "kev_vendor_kev_12m", "kev_vendor_kev_rate",
+    "kev_sim_max", "kev_sim_mean_top5", "cluster_kev_rate",
+]
+_PRIOR_GBM: dict = {}
+_HIST_FEATS: dict = {}
+
+
+def history_row_features(hist: pd.DataFrame, kev: pd.DataFrame, emb, idx) -> pd.DataFrame:
+    """PRIOR_GBM_COLS for every history CVE published 2022..2025, each as of Dec 31 of the year
+    before its publication. Cached (computed once)."""
+    from .embed import EMBED_START
+
+    if "f" not in _HIST_FEATS:
+        h = hist[(hist["published"] >= EMBED_START) & (hist["published"] <= "2025-12-31")].copy()
+        h["history_cutoff"] = pd.to_datetime((h["published"].dt.year - 1).astype(str) + "-12-31")
+        parts = [h[["cve_id", "published", "date_added"]], history_features(h, hist, kev), text_keyword_features(h),
+                 embedding_features(h, emb, idx, kev, history_rows=True), cluster_features(h, hist)]
+        _HIST_FEATS["f"] = pd.concat(parts, axis=1)
+        print(f"  history-row features (as-of prior year): {_HIST_FEATS['f'].shape}")
+    return _HIST_FEATS["f"]
+
+
+def prior_gbm_features(df: pd.DataFrame, f: pd.DataFrame, hist: pd.DataFrame, kev, emb, idx) -> pd.Series:
+    """Tree prior (no EPSS/flags): shallow LightGBM on history CVEs published 2022..H, label = added to
+    KEV within 365 days of publication and by H. Learns interactions the linear prior can't (hot
+    vendor x auth bypass x network product). Rows scored are all published after H."""
+    import lightgbm as lgb
+
+    hf = history_row_features(hist, kev, emb, idx)
+    out = pd.Series(np.nan, index=df.index)
+    params = dict(objective="binary", learning_rate=0.03, num_leaves=8, max_depth=3, min_child_samples=30,
+                  feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0, verbose=-1)
+    for cutoff, ix in df.groupby("history_cutoff").groups.items():
+        if cutoff not in _PRIOR_GBM:
+            h = hf[hf["published"] <= cutoff]
+            y = ((h["date_added"] <= cutoff) & (h["date_added"] <= h["published"] + pd.Timedelta(days=365))).astype(int)
+            pos = int(y.sum())
+            p = {**params, "scale_pos_weight": float(np.sqrt((len(y) - pos) / max(pos, 1)))}
+            models = [lgb.train({**p, "seed": SEED + s}, lgb.Dataset(h[PRIOR_GBM_COLS].astype(float), y), 400)
+                      for s in range(3)]
+            _PRIOR_GBM[cutoff] = models
+            print(f"  prior_gbm fit for cutoff {cutoff.date()}: n={len(y):,} positives={pos}")
+        X = f.loc[ix, PRIOR_GBM_COLS].astype(float)
+        out.loc[ix] = np.mean([m.predict(X, raw_score=True) for m in _PRIOR_GBM[cutoff]], axis=0)
+    return out
+
+
 def sibling_features(f: pd.DataFrame, df: pd.DataFrame, window_days: int = 3) -> pd.DataFrame:
     """Same-assigner CVEs in the same snapshot month published within +-window days (H5).
     Uses only snapshot-time values of the siblings (no sibling labels)."""
@@ -460,6 +532,7 @@ def main() -> None:
             if c not in f:
                 f[c] = np.nan
         f["prior_lr_score"] = prior_lr_features(df, f, hist, kev, emb, idx) if emb is not None else np.nan
+        f["prior_gbm_score"] = prior_gbm_features(df, f, hist, kev, emb, idx) if emb is not None else np.nan
         f = pd.concat([f, sibling_features(f, df)], axis=1)
         feats[name] = f
         print(f"{name:12s} {f.shape} positives={f['label'].sum() if name != 'predict' else 'n/a'}")

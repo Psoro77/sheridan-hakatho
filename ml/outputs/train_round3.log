@@ -1,0 +1,92 @@
+fold A: train (39868, 104) pos=40 | valid (35280, 104) pos=52
+fold B: train (51781, 104) pos=63 | valid (23367, 104) pos=32
+blend components: L9_core+prior+sibling+itw + C3_compact_v3
+                   experiment      strategy  k_flag  A_hits@500 A_ci95  B_hits@500 B_ci95  fold_sum@500  A_hits@1000  B_hits@1000
+                   L1_exploit         plain     NaN          17  10-24          14   7-21            31           21           14
+                   L1_exploit     segmented   500.0          17  10-25          17   9-25            34           21           17
+                   L1_exploit segmented+itw   500.0          21  12-30          21  12-29            42           25           21
+                L2_+vendor_kw         plain     NaN          18  12-27          15   8-22            33           20           16
+                L2_+vendor_kw     segmented   500.0          18  10-26          17   9-25            35           25           19
+                L2_+vendor_kw segmented+itw   300.0          21  13-31          20  12-29            41           27           22
+                     L3_+text         plain     NaN          19  12-28          14   8-22            33           20           17
+                     L3_+text     segmented   500.0          18  10-26          17   9-25            35           26           19
+                     L3_+text segmented+itw   150.0          25  16-34          18  11-26            43           26           21
+            L4_core(+cluster)         plain     NaN          18  11-28          14   7-22            32           20           17
+            L4_core(+cluster)     segmented   450.0          18  10-26          17   9-25            35           26           19
+            L4_core(+cluster) segmented+itw   500.0          22  13-31          21  13-30            43           30           23
+                L5_core+prior         plain     NaN          11   7-18          15   8-23            26           21           17
+                L5_core+prior     segmented   500.0          21  13-30          17   9-24            38           26           19
+                L5_core+prior segmented+itw   350.0          24  15-34          20  12-29            44           32           22
+              L6_core+sibling         plain     NaN          16   9-23          16   9-24            32           21           21
+              L6_core+sibling     segmented   500.0          18  10-26          17   9-25            35           24           22
+              L6_core+sibling segmented+itw   400.0          22  13-31          22  13-29            44           28           27
+        L7_core+prior+sibling         plain     NaN          15   8-22          18  11-26            33           23           21
+        L7_core+prior+sibling     segmented   200.0          21  13-30          20  12-28            41           25           23
+        L7_core+prior+sibling segmented+itw   250.0          23  15-32          23  14-31            46           29           25
+L8_core+prior+sibling+caution         plain     NaN          20  13-29          19  11-27            39           29           21
+L8_core+prior+sibling+caution     segmented   250.0          26  17-36          21  13-29            47           30           21
+L8_core+prior+sibling+caution segmented+itw   250.0          30  20-39          25  16-34            55           34           25
+    L9_core+prior+sibling+itw         plain     NaN          15   8-22          20  12-29            35           23           22
+    L9_core+prior+sibling+itw     segmented   150.0          21  13-30          20  12-29            41           24           22
+    L9_core+prior+sibling+itw segmented+itw   150.0          24  16-34          23  14-31            47           27           24
+                C1_compact_v1         plain     NaN          17   9-27          15   7-22            32           25           20
+                C1_compact_v1     segmented   400.0          23  14-33          16   8-24            39           26           20
+                C1_compact_v1 segmented+itw   400.0          27  17-39          20  11-29            47           29           22
+                C2_compact_v2         plain     NaN          22  13-34          19  11-27            41           28           24
+                C2_compact_v2     segmented   300.0          26  16-38          21  12-29            47           29           24
+                C2_compact_v2 segmented+itw   350.0          28  18-38          23  15-32            51           32           26
+                C3_compact_v3         plain     NaN          21  14-31          19  11-27            40           30           25
+                C3_compact_v3     segmented   350.0          26  17-38          20  12-28            46           32           26
+                C3_compact_v3 segmented+itw   350.0          31  21-43          23  15-32            54           35           28
+                     B1_blend         plain     NaN          17  11-25          21  13-30            38           28           23
+                     B1_blend     segmented   200.0          22  14-31          21  13-29            43           29           24
+                     B1_blend segmented+itw   200.0          25  16-33          23  15-31            48           32           26
+
+selection: {
+ "experiment": "C3_compact_v3",
+ "strategy": "segmented+itw",
+ "k_flag": 350,
+ "itw_first": true,
+ "components": [
+  {
+   "name": "C3_compact_v3",
+   "type": "lr",
+   "features": [
+    "epss_pct",
+    "exploitdb",
+    "metasploit",
+    "nuclei",
+    "poc_github",
+    "days_before_snapshot",
+    "days_to_label_cutoff",
+    "assigner_kev_rate",
+    "desc_vendor_kev_rate",
+    "desc_product_kev_rate",
+    "vendor_kev_count",
+    "desc_product_kev_count",
+    "kev_vendor_kev_12m",
+    "desc_product_kev_12m",
+    "text_lr_score",
+    "prior_lr_score",
+    "kev_sim_max",
+    "cluster_kev_rate",
+    "kw_unauth",
+    "kw_rce",
+    "desc_itw_phrase",
+    "sib_batch_size",
+    "sib_max_text_lr",
+    "sib_any_flag",
+    "sib_any_itw",
+    "prior_gbm_score",
+    "kev_vendor_kev_rate"
+   ]
+  }
+ ],
+ "fold_sum@500": 54,
+ "A_hits@500": 31,
+ "B_hits@500": 23,
+ "reference_v2_plain_L4": [
+  18,
+  14
+ ]
+}

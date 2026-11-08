@@ -1,0 +1,23 @@
+  history as of 2023-12-31: 74,038 CVEs, vendor matched 50.4%
+  text_lr fit for cutoff 2023-12-31: n=53,889 positives=246
+  prior_lr fit for cutoff 2023-12-31: n=53,889 positives=246 one-hot=381
+  history as of 2021-12-31: 20,149 CVEs, vendor matched 44.4%
+  history as of 2022-12-31: 45,222 CVEs, vendor matched 50.2%
+  history as of 2024-12-31: 113,991 CVEs, vendor matched 52.3%
+  history-row features (as-of prior year): (141992, 55)
+  prior_gbm fit for cutoff 2023-12-31: n=53,889 positives=241
+train_A      (39868, 104) positives=40
+  text_lr fit for cutoff 2024-12-31: n=93,842 positives=398
+  prior_lr fit for cutoff 2024-12-31: n=93,842 positives=398 one-hot=505
+  prior_gbm fit for cutoff 2024-12-31: n=93,842 positives=382
+valid        (35280, 104) positives=52
+train_final  (75148, 104) positives=119
+trainB       (51781, 104) positives=63
+validB       (23367, 104) positives=32
+  history as of 2025-12-31: 162,141 CVEs, vendor matched 59.6%
+  text_lr fit for cutoff 2025-12-31: n=141,992 positives=605
+  prior_lr fit for cutoff 2025-12-31: n=141,992 positives=605 one-hot=650
+  prior_gbm fit for cutoff 2025-12-31: n=141,992 positives=571
+predict      (72670, 104) positives=n/a
+desc_itw_phrase on valid: {'count': {0: 35256, 1: 24}, 'sum': {0: 47, 1: 5}, 'mean': {0: 0.0013331064216019967, 1: 0.20833333333333334}}
+desc_itw_phrase on predict count: 19

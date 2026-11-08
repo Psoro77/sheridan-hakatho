@@ -60,7 +60,9 @@ COMPACT_V2 = [
     "text_lr_score", "prior_lr_score", "kev_sim_max", "cluster_kev_rate", "kw_unauth", "kw_rce",
     "desc_itw_phrase", "sib_batch_size", "sib_max_text_lr", "sib_any_flag", "sib_any_itw",
 ]
-LR_EXPERIMENTS = {"C1_compact_v1": COMPACT_V1, "C2_compact_v2": COMPACT_V2}
+# v3: + tree prior (interactions on history) + rate for the resolved KEV vendor (incl. assigner map).
+COMPACT_V3 = COMPACT_V2 + ["prior_gbm_score", "kev_vendor_kev_rate"]
+LR_EXPERIMENTS = {"C1_compact_v1": COMPACT_V1, "C2_compact_v2": COMPACT_V2, "C3_compact_v3": COMPACT_V3}
 # Reported but never selectable: CVSS/CWE gains come from NIST's post-attack analysis (100% of
 # positives are NIST-analysed with no blank CVSS/CWE vs 65% / ~4% of negatives; 2026 has only 19%
 # NIST-sourced scores vs 37-48% in training). See docs/columns_used.md.

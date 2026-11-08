@@ -62,3 +62,20 @@ Post-hoc 2026 check (60 positives, report only, run once after selection): basel
 v1 9, v2 11, **round 2 submitted top500: 17**. For transparency: the same model ranked by plain
 probability (no segment/ITW rule) would get 19 on 2026; on validation it was clearly worse (40 vs 51),
 so we kept the fold-selected strategy rather than pick by the answer key.
+
+## Round 3 (miss analysis → two fixes)
+Miss analysis on the validation folds: every exploited CVE **with** exploit code was caught (39/39); all
+33 misses had none. They split into (A) big-target vendors with KEV history crowded out (Ivanti EPM ×3 at
+ranks 511-513, FortiOS, Windows NTLM, SonicWall SSLVPN, Zimbra), (B) vendor not identified because the
+description never names it (Samsung "SMR", SonicWall "SSLVPN"), and (C) no signal at all (Linux kernel race,
+Sudo, DELMIA, VeraCore, Digiever, AMI BMC): a realistic ceiling of about 40/52.
+Flag-type KEV rates for new CVEs: Nuclei 8.3% (9/109), GitHub PoC only 2.1%, Exploit-DB 1/58, Metasploit 0/16.
+
+Fixes: (1) assigner → KEV vendor map from past KEV CVEs (≥3 and ≥50% share; vendor coverage 45-49% → 50-60%);
+(2) tree prior: shallow LightGBM on 2022 → cutoff history (241 to 382+ positives; label = KEV within 365 days),
+each history row's features as of the year before its publication. Compact LR v3 = v2 + tree prior + resolved
+vendor rate: folds **31 / 23 (sum 54)** vs v2 28 / 23 (51); hits@1000 35/28 vs 32/26. Selected.
+
+Post-hoc 2026 check (report only): v3 submitted top500 = **15/60**, v2 was 17/60, baselines 7/6/8. The 2-hit
+gap is within noise (fold CIs are about ±8). We kept the validation-selected v3 rather than choose by the
+2026 answer key.

@@ -14,7 +14,7 @@ from .predict import load_meta
 from .train import lr_frame
 
 NOT_A_REASON = {"days_to_label_cutoff", "days_before_snapshot", "desc_len", "sib_max_epss_pct"}
-RATE_COLS = ("assigner_kev_rate", "desc_vendor_kev_rate", "desc_product_kev_rate")
+RATE_COLS = ("assigner_kev_rate", "desc_vendor_kev_rate", "desc_product_kev_rate", "kev_vendor_kev_rate")
 _PRIORS: dict = {}  # column -> typical (prior) value on the scoreboard, set in main()
 KW_TEXT = {
     "kw_vpn": "VPN product", "kw_firewall": "Firewall product", "kw_gateway": "Gateway product",
@@ -67,6 +67,12 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
         return f"{r['desc_product']} had {int(v)} KEV additions in the past year" if v and v > 0 else None
     if feat == "prior_lr_score":
         return "Vendor, product and description resemble past exploited CVEs"
+    if feat == "prior_gbm_score":
+        return "Matches past attack patterns (targeted vendor + attack type + product)"
+    if feat == "kev_vendor_kev_rate":
+        prior = _PRIORS.get(feat, 0)
+        return (f"{v:.1%} of past {r['vendor']} CVEs were exploited ({v / prior:.0f}x average)"
+                if prior and v and v >= 3 * prior else None)
     if feat == "sib_any_flag":
         return "A same-day CVE from this vendor already has exploit code" if v == 1 else None
     if feat == "sib_any_itw":

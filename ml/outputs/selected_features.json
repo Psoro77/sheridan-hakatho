@@ -1,11 +1,11 @@
 {
-  "experiment": "C2_compact_v2",
+  "experiment": "C3_compact_v3",
   "strategy": "segmented+itw",
   "k_flag": 350,
   "itw_first": true,
   "components": [
     {
-      "name": "C2_compact_v2",
+      "name": "C3_compact_v3",
       "type": "lr",
       "features": [
         "epss_pct",
@@ -32,15 +32,17 @@
         "sib_batch_size",
         "sib_max_text_lr",
         "sib_any_flag",
-        "sib_any_itw"
+        "sib_any_itw",
+        "prior_gbm_score",
+        "kev_vendor_kev_rate"
       ]
     }
   ],
-  "fold_sum@500": 51,
-  "A_hits@500": 28,
+  "fold_sum@500": 54,
+  "A_hits@500": 31,
   "B_hits@500": 23,
   "reference_v2_plain_L4": [
-    19,
-    15
+    18,
+    14
   ]
 }

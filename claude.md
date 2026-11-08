@@ -352,3 +352,10 @@ CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), mode
   so we kept the validated strategy. Rerun reproduces the same top500 exactly.
 - `predict.py` and `explain.py` handle LR / LightGBM / blend components (`models/final_meta.json`).
   LR reasons = coef × standardized value; rate reasons only shown when >= 3x the average.
+
+### Round 3 (2026-11-08, ~03:00 to 04:00)
+- Miss analysis on validation: all flagged positives caught; misses = no-flag CVEs (big-target vendor crowded
+  out, vendor unidentified, or no signal). Details in `ml/docs/findings.md`.
+- Added assigner → KEV vendor map (past-only) and `prior_gbm_score` (tree prior on history, as-of-prior-year
+  features, label = KEV within 365 days). **Selected compact LR v3** (`train.COMPACT_V3`): folds 31 / 23 (54).
+- 2026 check (report only): v3 = 15/60, v2 = 17/60 (commit 3fa404c). Within noise; kept the validated v3.
