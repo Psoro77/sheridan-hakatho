@@ -332,7 +332,23 @@ CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), mode
   look flat across horizons, so we kept the spec's train_final (alternative: train_A + valid stacked).
 
 ### Open TODOs
-- Reasons: only show vendor rate when clearly above the prior; cluster slide table should use a
-  2022+ prior.
-- Decide on `desc_itw_phrase` (rule-based boost needs justification on valid).
+- Cluster slide table should use a 2022+ prior.
 - Update `docs/findings.md` and `docs/columns_used.md` with the numbers above; run `export_tigerdata`.
+
+### Round 2 (2026-11-08, 01:00 to 03:00)
+- **Two validation folds**: A = train_A → valid (52 pos), B = trainB (2024-01..2025-03, labels to
+  2025-03-31) → validB (2025-04..09, 32 pos). Selection = best fold sum of hits@500; every experiment
+  is logged in `ml/outputs/experiments.csv` with bootstrap 95% CIs.
+- New features: per-cutoff KEV vendor/product vocabulary (product matching, coverage 36% → 45-49%),
+  12-month KEV heat, `prior_lr_score` (embedding + keywords + one-hot vendor/product/assigner, past
+  only), sibling batch features (same assigner, ±3 days, same snapshot month; no sibling labels).
+- Ranking strategy: CVEs with an "exploited in the wild" phrase first, then **350 slots for CVEs with
+  exploit code and 150 for CVEs without**, chosen as the centre of the best k_flag plateau on both folds.
+- **Selected model: compact LR v2** (`train.COMPACT_V2`, 25 features), segmented + ITW. Folds 28 / 23
+  (sum 51) vs v2 LightGBM 19 / 15 (34). LightGBM + CVSS/CWE scored 55 but is **rejected as leakage**
+  (100% of positives NIST-analysed; 2026 has far fewer NIST scores); it's in `REPORT_ONLY`.
+- Post-hoc 2026 check (run once after selection): **submitted top500 = 17 of 60** (baselines 7 / 6 / 8;
+  v2 was 11). Plain-probability ranking would get 19 on 2026 but was worse on validation (40 vs 51),
+  so we kept the validated strategy. Rerun reproduces the same top500 exactly.
+- `predict.py` and `explain.py` handle LR / LightGBM / blend components (`models/final_meta.json`).
+  LR reasons = coef × standardized value; rate reasons only shown when >= 3x the average.

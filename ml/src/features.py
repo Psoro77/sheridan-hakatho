@@ -222,7 +222,8 @@ def history_features(df: pd.DataFrame, hist: pd.DataFrame, kev: pd.DataFrame) ->
     out["vendor_kev_count"] = np.where(out["kev_vendor"].notna(), out["kev_vendor_kev_count"], out["assigner_kev_count"])
     # Display name only (not a model feature): UUID CNAs get the vendor their descriptions name most.
     disp = df["assigner_org"].map(assigner_display_names(hist_as_of(hist, kev, df["history_cutoff"].max())))
-    out["vendor"] = out["kev_vendor"].fillna(disp).fillna(df["assigner_org"])
+    raw_org = df["assigner_org"].map(lambda a: f"CNA {a[:8]}" if re.fullmatch(r"[0-9a-f\-]{36}", a or "") else str(a).capitalize())
+    out["vendor"] = out["kev_vendor"].fillna(disp).fillna(raw_org)
     return out.drop(columns=["desc_vendor"])
 
 

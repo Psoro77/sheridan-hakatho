@@ -265,7 +265,8 @@ def run_final() -> None:
             coef = pd.Series(m[-1].coef_[0], index=cols).sort_values(ascending=False)
             coef.to_csv(OUTPUT_DIR / "lr_coefficients.csv", header=["coef_std"])
             print(coef.to_string())
-    (MODEL_DIR / "final_meta.json").write_text(json.dumps({**sel, "n_models": N_SEEDS, "n_rounds": N_ROUNDS}, indent=2))
+    (MODEL_DIR / "final_meta.json").write_text(json.dumps(
+        {**sel, "n_models": N_SEEDS, "n_rounds": N_ROUNDS, "train_pos_rate": float(y.mean())}, indent=2))
 
 
 def main() -> None:

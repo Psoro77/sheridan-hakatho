@@ -30,3 +30,35 @@ Notable results for the pitch ("Discovery"). Newest at the bottom.
   fixed 300 rounds, 5-seed bagging.
 - `text_lr_score` is trained on **all CVEs published 2022 → history cutoff** labelled with past KEV
   (hundreds of positives), not on the split itself, so it is past-only and needs no out-of-fold trick.
+
+## Round 2 (2026-11-08 night): what moved the needle
+Validation now uses **two folds**: A = train_A → valid (52 positives), B = trainB (2024-01..2025-03,
+labels to 2025-03-31) → validB (2025-04..09, 32 positives). Full table: `outputs/experiments.csv`.
+
+- **58% of exploited CVEs had no public exploit code at snapshot** (30 of 52 on valid). Flag-based
+  ranking can never find them; EPSS gets 0 hits in the top 1,000 among them.
+- **Segmented top 500** (350 slots for CVEs with exploit code, 150 for those without): +2 to +3 hits on both
+  folds for every model. The tree couldn't learn "different rules per segment" from 40 positives.
+- **"Exploited in the wild" rows first**: +3 to +5 hits on both folds for every model. Phrases come from
+  CNAs at publication (VulnCheck, MITRE, GitHub advisories, Meta), not later edits.
+- **Nuclei templates**: 8% KEV rate vs 3% for GitHub PoCs on valid; splitting flags lets the LR weight them.
+- **Product matching** (KEV product names like "FortiOS", "Connect Secure", "Windows") raised vendor
+  coverage from 36% to 45-49%; vocabularies are built per history cutoff (past KEV only).
+- **Prior model** (Granite embedding + keywords + one-hot vendor/product/assigner, trained on 2022 → cutoff
+  history with 246 to 605 positives) is the strongest single LR feature.
+- **Leakage caught**: adding CVSS/CWE gave the best-looking result (55 vs 51), but 100% of exploited CVEs are
+  NIST-analysed with no blank CVSS/CWE vs 65% / ~4% of the rest, and 2026 has 19% NIST-sourced scores vs
+  37 to 48% in training. Rejected; kept in the table as a reported leakage test.
+
+| Model (strategy) | Fold A | Fold B | Sum |
+|---|---|---|---|
+| Exploit code then EPSS (baseline) | 18 | – | – |
+| v2 LightGBM core (plain) | 19 | 15 | 34 |
+| Compact LR v2 (plain) | 22 | 18 | 40 |
+| **Compact LR v2 (segmented + ITW first), selected** | **28** | **23** | **51** |
+| LightGBM + caution CVSS/CWE (rejected, leakage) | 30 | 25 | 55 |
+
+Post-hoc 2026 check (60 positives, report only, run once after selection): baselines 7 / 6 / 8;
+v1 9, v2 11, **round 2 submitted top500: 17**. For transparency: the same model ranked by plain
+probability (no segment/ITW rule) would get 19 on 2026; on validation it was clearly worse (40 vs 51),
+so we kept the fold-selected strategy rather than pick by the answer key.
