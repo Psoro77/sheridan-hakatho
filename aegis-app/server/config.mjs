@@ -28,5 +28,8 @@ export function loadConfig() {
     host: env.AEGIS_API_HOST || '127.0.0.1',
     port: Number(env.AEGIS_API_PORT || 5174),
     workspaceId: env.AEGIS_WORKSPACE_ID || 'sheridan-labs',
+    solanaCluster: env.SOLANA_CLUSTER || 'devnet',
+    solanaRpcUrl: env.SOLANA_RPC_URL || '',
+    solanaKeypairPath: env.SOLANA_KEYPAIR_PATH || fileURLToPath(new URL('../.solana/devnet-keypair.json', import.meta.url)),
   };
 }

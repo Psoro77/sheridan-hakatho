@@ -30,6 +30,8 @@ yarn-error.log*
 .env*
 .dev.vars*
 *.pem
+# Solana signing keypair (never commit)
+/.solana/
 
 # Checkout-local tool state
 /.wrangler/
