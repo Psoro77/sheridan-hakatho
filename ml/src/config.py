@@ -36,9 +36,11 @@ HISTORY_START = "2021-01-01"
 SMOOTH_M = 20
 TOP_K = 500
 
-EMBED_MODEL = "ibm-granite/granite-embedding-small-english-r2"
-EMBED_MAX_LEN = 256
-EMBED_BATCH = 64
+# Granite R2-small (ModernBERT) ran at 12 texts/s on our CPU (~5.5 h for 235k texts); Granite
+# 30m-english (R1) at 128 tokens runs 63 texts/s (~1 h). Both are IBM Granite; see docs/columns_used.md.
+EMBED_MODEL = "ibm-granite/granite-embedding-30m-english"
+EMBED_MAX_LEN = 128
+EMBED_BATCH = 32
 
 PRODUCT_KEYWORDS = {
     "kw_vpn": r"\bvpn\b|ssl[- ]vpn|globalprotect|anyconnect",

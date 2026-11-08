@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+lightgbm==4.7.0
+numba==0.68.1
+numpy==2.5.4
+pandas==3.1.1
+psycopg==3.3.8
+psycopg-binary==3.3.8
+pyarrow==26.0.1
+scikit-learn==1.9.1
+scipy==1.18.1
+sentence-transformers==6.2.0
+shap==0.54.1
+torch==2.15.0+cpu
+transformers==5.22.2
+umap-learn==0.5.12

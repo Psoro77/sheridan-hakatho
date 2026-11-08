@@ -1,0 +1,6 @@
+exploit: ['epss_pct', 'exploitdb', 'metasploit', 'nuclei', 'poc_github', 'n_exploit_flags', 'days_to_label_cutoff']
+vendor_kw: ['assigner_kev_count', 'assigner_kev_rate', 'assigner_n_hist', 'desc_vendor_kev_count', 'desc_vendor_kev_rate', 'vendor_kev_count', 'kw_vpn', 'kw_firewall', 'kw_gateway', 'kw_router', 'kw_edge', 'kw_appliance', 'kw_exchange', 'kw_sharepoint', 'kw_citrix', 'kw_load_balancer', 'kw_file_transfer', 'kw_cms', 'kw_plugin', 'kw_windows', 'kw_browser', 'kw_kernel', 'kw_iot_camera', 'kw_unauth', 'kw_rce', 'kw_cmd_injection', 'kw_auth_bypass', 'kw_deserialization', 'kw_path_traversal', 'kw_sqli', 'kw_privesc', 'kw_memory_corruption', 'kw_xss', 'kw_ssrf', 'kw_file_upload', 'kw_dos', 'desc_len']
+text: ['kev_sim_max', 'kev_sim_mean_top5', 'text_lr_score']
+cluster: ['cluster_kev_rate']
+caution: ['cvss_attack_vector', 'cvss_attack_complexity', 'cvss_privileges_required', 'cvss_user_interaction', 'cvss_scope', 'cvss_confidentiality_impact', 'cvss_integrity_impact', 'cvss_availability_impact', 'cvss3_score', 'cvss4_score', 'cwe_kev_rate', 'cwe_79', 'cwe_89', 'cwe_78', 'cwe_22', 'cwe_787', 'cwe_416', 'cwe_20', 'cwe_287', 'cwe_502', 'cwe_77', 'cwe_94', 'cwe_862', 'cwe_352', 'cwe_434', 'cwe_125', 'cwe_918', 'cwe_306', 'cwe_843', 'cwe_288', 'cwe_119']
+itw: ['desc_itw_phrase']

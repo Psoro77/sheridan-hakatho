@@ -1,0 +1,9 @@
+row,groups,n_features,hits@100,hits@500,hits@1000,pr_auc,n,positives,best_iter_mean
+1_exploit,exploit,7,9,17,22,0.0449,35280,52,300
+2_+vendor_kw,exploit+vendor_kw,44,6,19,21,0.05223,35280,52,300
+3_+text,exploit+vendor_kw+text,47,6,19,21,0.05223,35280,52,300
+4_+cluster,exploit+vendor_kw+text+cluster,48,6,19,21,0.05223,35280,52,300
+5_+caution,exploit+vendor_kw+text+cluster+caution,79,9,17,25,0.06344,35280,52,300
+5b_+caution_imputed,exploit+vendor_kw+text+cluster+caution,79,9,17,25,0.063,35280,52,300
+6_+itw,exploit+vendor_kw+text+cluster+caution+itw,80,9,17,25,0.06344,35280,52,300
+6b_core+itw,exploit+vendor_kw+text+cluster+itw,49,6,19,21,0.05223,35280,52,300

@@ -8,17 +8,19 @@ python -m src.features
 from __future__ import annotations
 
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
 
 from . import data_io
 from .config import (
     ATTACK_KEYWORDS, HISTORY_START, ITW_PATTERN, OUTPUT_DIR, PROCESSED_DIR,
     PRODUCT_KEYWORDS, SEED, SMOOTH_M, seed_everything,
 )
+
+warnings.filterwarnings("ignore", "This pattern is interpreted as a regular expression")
 
 FLAGS = ["exploitdb", "metasploit", "nuclei", "poc_github"]
 TOP_CWES = [
@@ -125,8 +127,26 @@ def history_features(df: pd.DataFrame, hist: pd.DataFrame, kev: pd.DataFrame, ve
         g, prior = rate_table(hist, "cwe_primary", cutoff)
         out.loc[idx, "cwe_kev_rate"] = sub["cwe_primary"].map(g["rate"]).fillna(prior).to_numpy()
     out["vendor_kev_count"] = np.where(df["desc_vendor"].notna(), out["desc_vendor_kev_count"], out["assigner_kev_count"])
-    out["vendor"] = df["desc_vendor"].fillna(df["assigner_org"])
+    # Display name only (not a model feature): UUID CNAs get the vendor their descriptions name most.
+    out["vendor"] = df["desc_vendor"].fillna(df["assigner_org"].map(assigner_display_names(hist)).fillna(df["assigner_org"]))
     return out
+
+
+_DISPLAY: dict = {}
+
+
+def assigner_display_names(hist: pd.DataFrame) -> dict:
+    if not _DISPLAY:
+        is_uuid = hist["assigner_org"].str.fullmatch(r"[0-9a-f\-]{36}", na=False)
+        h = hist[is_uuid].dropna(subset=["desc_vendor"])
+        top = h.groupby("assigner_org")["desc_vendor"].agg(lambda s: s.value_counts().index[0])
+        _DISPLAY.update(top.to_dict())
+        for a in hist.loc[is_uuid, "assigner_org"].unique():
+            _DISPLAY.setdefault(a, f"CNA {a[:8]}")
+        # Email-domain orgs: capitalize ("fortinet" -> "Fortinet").
+        for a in hist.loc[~is_uuid, "assigner_org"].dropna().unique():
+            _DISPLAY[a] = a.capitalize()
+    return _DISPLAY
 
 
 def text_keyword_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -174,24 +194,35 @@ def embedding_features(df: pd.DataFrame, emb: np.ndarray, idx: pd.Series, kev: p
     return out
 
 
-def text_lr(train: pd.DataFrame, others: list[pd.DataFrame], emb: np.ndarray, idx: pd.Series) -> None:
-    """Out-of-fold LR score on train; full-train fit applied to `others`. Writes column in place."""
-    def X_of(d):
-        r = d["cve_id"].map(idx)
-        X = np.zeros((len(d), emb.shape[1]), dtype=np.float32)
-        ok = r.notna().to_numpy()
-        X[ok] = emb[r[ok].astype(int).to_numpy()]
-        return X
+_TEXT_LR_CACHE: dict = {}
 
-    Xtr, ytr = X_of(train), train["label"].astype(int).to_numpy()
-    make = lambda: LogisticRegression(C=0.5, max_iter=3000, class_weight="balanced", random_state=SEED)
-    oof = np.zeros(len(train))
-    for tr, te in StratifiedKFold(5, shuffle=True, random_state=SEED).split(Xtr, ytr):
-        oof[te] = make().fit(Xtr[tr], ytr[tr]).decision_function(Xtr[te])
-    train["text_lr_score"] = oof
-    full = make().fit(Xtr, ytr)
-    for d in others:
-        d["text_lr_score"] = full.decision_function(X_of(d))
+
+def _emb_matrix(ids: pd.Series, emb: np.ndarray, idx: pd.Series) -> tuple[np.ndarray, np.ndarray]:
+    r = ids.map(idx)
+    ok = r.notna().to_numpy()
+    return emb[r[ok].astype(int).to_numpy()].astype(np.float32), ok
+
+
+def text_lr_features(df: pd.DataFrame, hist: pd.DataFrame, emb: np.ndarray, idx: pd.Series) -> pd.Series:
+    """Past-only text model: for history cutoff H, fit LR(embedding) on CVEs published in
+    [EMBED_START, H] with label = in KEV by H. Rows being scored are all published after H, so no
+    row ever scores itself and no OOF is needed. Far more positives than the split itself."""
+    from .embed import EMBED_START
+
+    out = pd.Series(np.nan, index=df.index)
+    for cutoff, ix in df.groupby("history_cutoff").groups.items():
+        if cutoff not in _TEXT_LR_CACHE:
+            h = hist[(hist["published"] >= EMBED_START) & (hist["published"] <= cutoff)]
+            X, ok = _emb_matrix(h["cve_id"], emb, idx)
+            y = (h["date_added"] <= cutoff).to_numpy()[ok].astype(int)
+            m = LogisticRegression(C=0.5, max_iter=3000, class_weight="balanced", random_state=SEED).fit(X, y)
+            _TEXT_LR_CACHE[cutoff] = m
+            print(f"  text_lr fit for cutoff {cutoff.date()}: n={len(y):,} positives={y.sum()}")
+        X, ok = _emb_matrix(df.loc[ix, "cve_id"], emb, idx)
+        vals = np.full(len(ix), np.nan)
+        vals[ok] = _TEXT_LR_CACHE[cutoff].decision_function(X)
+        out.loc[ix] = vals
+    return out
 
 
 def cluster_features(df: pd.DataFrame, hist: pd.DataFrame) -> pd.DataFrame:
@@ -245,20 +276,13 @@ def main() -> None:
         ]
         if emb is not None:
             parts.append(embedding_features(df, emb, idx, kev))
+            parts.append(text_lr_features(df, hist, emb, idx).rename("text_lr_score"))
         f = pd.concat(parts, axis=1)
-        feats[name] = f
-        print(f"{name:12s} {f.shape} positives={f['label'].sum() if name != 'predict' else 'n/a'}")
-
-    if emb is not None:
-        text_lr(feats["train_A"], [feats["valid"]], emb, idx)
-        text_lr(feats["train_final"], [feats["predict"]], emb, idx)
-    else:
-        for f in feats.values():
-            f["text_lr_score"] = np.nan
-    for f in feats.values():
-        for c in ("kev_sim_max", "kev_sim_mean_top5"):
+        for c in ("kev_sim_max", "kev_sim_mean_top5", "text_lr_score"):
             if c not in f:
                 f[c] = np.nan
+        feats[name] = f
+        print(f"{name:12s} {f.shape} positives={f['label'].sum() if name != 'predict' else 'n/a'}")
 
     for name, f in feats.items():
         f.to_parquet(PROCESSED_DIR / f"features_{name}.parquet", index=False)

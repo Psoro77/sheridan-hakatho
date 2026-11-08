@@ -53,7 +53,10 @@ def main() -> None:
     torch.set_num_threads(max(1, torch.get_num_threads()))
     df = texts_to_embed()
     print(f"texts to embed: {len(df):,}")
-    model = SentenceTransformer(EMBED_MODEL, device="cuda" if torch.cuda.is_available() else "cpu")
+    model = SentenceTransformer(
+        EMBED_MODEL, device="cuda" if torch.cuda.is_available() else "cpu",
+        model_kwargs={"dtype": torch.float32},  # bf16 default is very slow on CPU
+    )
     model.max_seq_length = EMBED_MAX_LEN
     CHUNK_DIR.mkdir(exist_ok=True)
 
