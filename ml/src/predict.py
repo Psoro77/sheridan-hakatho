@@ -72,7 +72,7 @@ def main() -> None:
     vc = tf["vendor"].value_counts()
     print(f"top500 vendors: {vc.size} distinct, largest share {vc.index[0]} = {vc.iloc[0]}")
     if meta.get("use_live_kev"):
-        print("WARNING: model uses point-in-time live KEV features (AEGIS_USE_LIVE_KEV=1); disclose in write-up")
+        print("WARNING: model uses point-in-time live KEV features (BREACHLIGHT_USE_LIVE_KEV=1); disclose in write-up")
     print(f"top500 composition: itw={int(tf['desc_itw_phrase'].sum())} flagged={int((tf['n_exploit_flags'] > 0).sum())} "
           f"by month={tf['snapshot_month'].value_counts().sort_index().to_dict()}")
 

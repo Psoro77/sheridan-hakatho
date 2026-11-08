@@ -1,0 +1,67 @@
+/* Defense plan exposure map (components/defense-graph.tsx). Uses the tokens from app/globals.css. */
+.dg-panel { margin-bottom: 20px; padding: 18px }
+.dg-panel .panel-heading { margin-bottom: 12px }
+.dg-panel .panel-heading b { color: var(--ink); font-weight: 600 }
+.dg-canvas { border: 1px solid var(--line-soft); border-radius: var(--r); background: var(--surface-2); overflow: hidden }
+.dg-canvas .react-flow { --xy-background-color: var(--surface-2); font-family: inherit }
+.dg-canvas .react-flow__node { cursor: default }
+.dg-canvas .react-flow__node-cve { cursor: pointer }
+.dg-canvas .react-flow__controls { box-shadow: var(--shadow-1); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden }
+.dg-canvas .react-flow__controls-button { background: var(--surface); border-bottom-color: var(--line-soft); color: var(--ink-2) }
+
+.dg-node { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-1); padding: 10px 12px; font-size: 12px; color: var(--ink-2) }
+.dg-node b { display: block; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.3 }
+.dg-node small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums }
+.dg-icon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--surface-3); color: var(--ink-2) }
+
+.dg-asset { width: 230px }
+.dg-asset.public { border-color: var(--red-line) }
+.dg-asset.public .dg-icon { background: var(--red-soft); color: var(--red) }
+.dg-nomatch { border-style: dashed; background: var(--surface-2) }
+
+.dg-cve { display: block; width: 250px; border-left: 3px solid var(--ink-4); transition: box-shadow .15s, transform .15s }
+.dg-cve.fix { border-left-color: var(--red) }
+.dg-cve.week { border-left-color: var(--orange) }
+.dg-cve:hover { box-shadow: var(--shadow-2); transform: translateY(-1px) }
+.dg-cve-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px }
+.dg-cve-top b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.dg-tier { flex: none; padding: 1px 7px; border-radius: var(--r-pill); font-size: 10.5px; font-weight: 600; background: var(--surface-3); color: var(--ink-2) }
+.dg-tier.fix { background: var(--red-soft); color: var(--red) }
+.dg-tier.week { background: var(--orange-soft); color: var(--orange) }
+.dg-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px }
+.dg-badges:empty { display: none }
+.dg-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: var(--r-pill); font-size: 10.5px; font-weight: 500; background: var(--surface-3); color: var(--ink-2); text-decoration: none }
+.dg-badge.public { background: var(--red-soft); color: var(--red) }
+.dg-badge.ticket { background: var(--blue-soft); color: var(--blue) }
+.dg-badge.ticket:hover { text-decoration: underline }
+
+.dg-status { width: 190px }
+.dg-status.reviewed .dg-icon { background: var(--accent-soft); color: var(--accent) }
+.dg-status.pending .dg-icon { background: var(--orange-soft); color: var(--orange) }
+
+.dg-canvas .react-flow__edge-path { stroke: var(--line-strong); stroke-width: 1.5 }
+.dg-canvas .dg-edge.public .react-flow__edge-path { stroke: var(--red); stroke-width: 2 }
+.dg-canvas .dg-edge.internal .react-flow__edge-path { stroke: var(--ink-4) }
+.dg-canvas .dg-edge.nomatch .react-flow__edge-path { stroke: var(--ink-4); stroke-dasharray: 4 4 }
+.dg-canvas .dg-edge.status.reviewed .react-flow__edge-path { stroke: var(--accent-line); stroke-width: 2 }
+.dg-canvas .dg-edge.status.pending .react-flow__edge-path { stroke: var(--orange-line); stroke-width: 2 }
+
+.dg-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; color: var(--ink-3) }
+.dg-legend span { display: inline-flex; align-items: center; gap: 7px }
+.dg-swatch { display: inline-block; width: 20px; height: 0; border-top: 2px solid var(--ink-4) }
+.dg-swatch.public { border-top-color: var(--red) }
+.dg-swatch.nomatch { border-top-style: dashed }
+.dg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--ink-4) }
+.dg-dot.fix { background: var(--red) }
+.dg-dot.week { background: var(--orange) }
+.dg-footnote { margin-top: 8px; font-size: 11.5px; color: var(--ink-4) }
+.dg-mobile-note { display: none; font-size: 12.5px; color: var(--ink-3) }
+
+@media (max-width: 760px) {
+  .dg-canvas, .dg-legend { display: none }
+  .dg-mobile-note { display: block }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg-canvas .react-flow__edge.animated path { animation: none; stroke-dasharray: none }
+  .dg-cve { transition: none }
+}

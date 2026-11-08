@@ -11,8 +11,8 @@ SEED = 42
 
 ML_DIR = Path(__file__).resolve().parents[1]
 REPO_DIR = ML_DIR.parent
-# Raw data lives in IBM/data/data by default; override with AEGIS_RAW_DIR (e.g. ml/data/raw).
-RAW_DIR = Path(os.environ.get("AEGIS_RAW_DIR", REPO_DIR / "IBM" / "data" / "data"))
+# Raw data lives in IBM/data/data by default; override with BREACHLIGHT_RAW_DIR (e.g. ml/data/raw).
+RAW_DIR = Path(os.environ.get("BREACHLIGHT_RAW_DIR", REPO_DIR / "IBM" / "data" / "data"))
 PROCESSED_DIR = ML_DIR / "data" / "processed"
 OUTPUT_DIR = ML_DIR / "outputs"
 MODEL_DIR = ML_DIR / "models"

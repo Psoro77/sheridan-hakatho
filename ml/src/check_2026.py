@@ -57,6 +57,13 @@ def main() -> None:
         res["model_plain_probability_order"] = ranking_report(s["label"], s["p_exploit"])
         found = s.sort_values("rank").head(TOP_K).query("label == 1")["cve_id"].tolist()  # rank = submitted order
         res["submitted_top500"]["found_ids"] = found
+        res["positive_ranks"] = {"breachlight": sorted(s.loc[s["label"] == 1, "rank"].astype(int).tolist())}
+    # REPORT ONLY, for the app's "needles in the haystack" chart: rank of each 2026 positive per ordering.
+    import numpy as np
+    y = sb["label"].to_numpy()
+    for k, sc in baseline_scores(sb).items():
+        order = np.argsort(-np.nan_to_num(np.asarray(sc, dtype=float), nan=-1e9), kind="stable")
+        res.setdefault("positive_ranks", {})[k] = sorted((np.flatnonzero(y[order]) + 1).tolist())
     res["all_candidates_itw_first"] = candidate_report(sb)
     (OUTPUT_DIR / "check_2026.json").write_text(json.dumps(res, indent=2))
     print(pd.Series(res["all_candidates_itw_first"]).to_string())

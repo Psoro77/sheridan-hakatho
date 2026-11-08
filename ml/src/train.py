@@ -38,7 +38,7 @@ import os
 
 # V0 (round 5): trainV0 (2024-01..06) -> validV0 (2024-07..12, labels to 2025-04-30). Third disjoint set.
 FOLDS = {"V0": ("trainV0", "validV0"), "V1": ("train_A", "validV1"), "V2": ("trainV2", "validV2")}
-USE_LIVE_KEV = os.environ.get("AEGIS_USE_LIVE_KEV") == "1"
+USE_LIVE_KEV = os.environ.get("BREACHLIGHT_USE_LIVE_KEV") == "1"
 MIN_TRAIN_HORIZON = 31
 N_SEEDS = 5
 SELECTION_PATH = OUTPUT_DIR / "selected_features.json"

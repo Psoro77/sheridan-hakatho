@@ -65,7 +65,7 @@ FEATURE_GROUPS = {
     # Point-in-time KEV (round 5): KEV additions between the annual history cutoff and the END of the
     # row's snapshot month. Known at snapshot time. For training/validation the provided KEV file covers
     # it; for the scoreboard it needs the live KEV feed, so these are OFF for predict unless
-    # AEGIS_USE_LIVE_KEV=1 (team decision, see docs/columns_used.md).
+    # BREACHLIGHT_USE_LIVE_KEV=1 (team decision, see docs/columns_used.md).
     "fresh": ["kev_vendor_fresh", "assigner_kev_fresh", "sib_kev_fresh"],
     "cluster": ["cluster_kev_rate"],
     "caution": [
@@ -487,7 +487,7 @@ def sibling_features(f: pd.DataFrame, df: pd.DataFrame, window_days: int = 3) ->
     return out
 
 
-USE_LIVE_KEV = os.environ.get("AEGIS_USE_LIVE_KEV") == "1"
+USE_LIVE_KEV = os.environ.get("BREACHLIGHT_USE_LIVE_KEV") == "1"
 LIVE_KEV_PATH = REPO_DIR / "IBM" / "data" / "external" / "kev_live" / "kev_full_2026-11-06.csv"
 
 
@@ -500,7 +500,7 @@ def point_in_time_kev(kev: pd.DataFrame, split: str) -> pd.DataFrame:
     live = pd.read_csv(LIVE_KEV_PATH, usecols=["cve_id", "vendor", "date_added"], dtype=str)
     live["date_added"] = pd.to_datetime(live["date_added"])
     live = live[live["date_added"] > kev["date_added"].max()]
-    print(f"  [predict] AEGIS_USE_LIVE_KEV=1: {len(live)} live KEV entries after {kev['date_added'].max().date()}")
+    print(f"  [predict] BREACHLIGHT_USE_LIVE_KEV=1: {len(live)} live KEV entries after {kev['date_added'].max().date()}")
     return pd.concat([kev[["cve_id", "vendor", "date_added"]], live]).drop_duplicates("cve_id")
 
 

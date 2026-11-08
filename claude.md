@@ -1,6 +1,6 @@
-# Aegis: ML component (CLAUDE.md)
+# Breachlight: ML component (CLAUDE.md)
 
-Context for any AI coding agent working on the **machine learning part** of Aegis, our submission to the
+Context for any AI coding agent working on the **machine learning part** of Breachlight, our submission to the
 **[IBM] Before the Breach** track at Sheridan Datathon 2026 (final deadline **Sunday Nov 8, 12:00 PM EST**).
 
 Read this whole file before writing code. The rules in "Leakage rules" are not optional.
@@ -9,7 +9,7 @@ Read this whole file before writing code. The rules in "Leakage rules" are not o
 
 ## 1. What we are building
 
-Aegis predicts which newly published vulnerabilities (CVEs) attackers will exploit, so security teams know
+Breachlight predicts which newly published vulnerabilities (CVEs) attackers will exploit, so security teams know
 what to fix first and why. The ML part produces:
 
 1. **`top500.csv`**: the 500 CVEs from `scoreboard_2026.csv` most likely to be added to CISA KEV.
@@ -44,7 +44,7 @@ showing we checked for leakage, so log every decision.
 
 ## 3. Data
 
-All raw files are in `IBM/data/data/` (gitignored, about 850 MB; override with env var `AEGIS_RAW_DIR`).
+All raw files are in `IBM/data/data/` (gitignored, about 850 MB; override with env var `BREACHLIGHT_RAW_DIR`).
 Live 2026 KEV labels are in `IBM/data/external/kev_live/` (**check only**, see section 10). Join on `cve_id`. `weakness_types.csv`
 matches entries of `cwe_ids` (split on `;`). If a CSV reader fails, set quote and escape characters to `"`.
 Read version columns as text. Load only the columns you need.
@@ -376,7 +376,7 @@ CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), mode
 ### Round 5: review fixes tested, submission unchanged (2026-11-08, ~02:30 to 03:30 EST)
 - Added fold V0 (trainV0 2024-01..06, only 6 positives, so noisy; validV0 2024-07..12, 30 positives), vendor-release
   caps (`itw+capN`), `sib_batch_pct`, point-in-time "fresh KEV" features (off for predict unless
-  `AEGIS_USE_LIVE_KEV=1`), a no-Granite ablation, and an accept rule (≥ +2 pooled, no fold loss). Nothing passed.
+  `BREACHLIGHT_USE_LIVE_KEV=1`), a no-Granite ablation, and an accept rule (≥ +2 pooled, no fold loss). Nothing passed.
 - Granite ablation: removing the embedding-based features costs 4-5 validation hits.
 - 2026 check (report only): v2 21, **v3 19 (submitted)**, v4 11, v3 + batch percentile 15. v3 and v4 tie on validation.
   Keeping v3 was decided after seeing 2026 (disclosed in `ml/docs/findings.md`, round 5).
