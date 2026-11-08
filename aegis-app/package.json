@@ -15,7 +15,9 @@
     "api": "node server/index.mjs",
     "db:seed": "node scripts/seed-tigerdata.mjs",
     "connections:check": "node scripts/check-connections.mjs",
-    "test:server": "node --test server/*.test.mjs"
+    "test:server": "node --test server/*.test.mjs",
+    "solana:keygen": "node scripts/solana-keygen.mjs",
+    "anchor:snapshot": "node scripts/anchor-snapshot.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

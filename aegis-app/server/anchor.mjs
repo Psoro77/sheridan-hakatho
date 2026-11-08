@@ -37,7 +37,14 @@ export function buildManifest({ records, files, createdAt = new Date().toISOStri
 
 export const manifestHash = manifest => sha256Hex(canonicalJson(manifest));
 export const memoText = hash => `${MEMO_PREFIX}${hash}`;
-export const hashFile = path => sha256Hex(readFileSync(path));
+const TEXT = /\.(csv|json|txt|md)$/i;
+/** File hashes: `raw` = exact bytes; `lf` = text with CRLF normalized to LF (git autocrlf rewrites line
+ * endings on Windows checkouts, so a Linux clone and this machine see different bytes). */
+export function hashFile(path) {
+  const bytes = readFileSync(path), raw = sha256Hex(bytes);
+  return TEXT.test(path) ? { raw, lf: sha256Hex(bytes.toString('utf8').replace(/\r\n/g, '\n')) } : { raw };
+}
+export const fileMatches = (path, expected) => { const now = hashFile(path); return now.raw === expected.raw || (!!now.lf && now.lf === expected.lf); };
 export const explorerUrl = (signature, cluster) => `https://explorer.solana.com/tx/${signature}${cluster === 'mainnet-beta' ? '' : `?cluster=${cluster}`}`;
 
 /** Compare current records against an anchor file. Pure: no network. */
