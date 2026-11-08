@@ -7,6 +7,7 @@ python -m src.features
 """
 from __future__ import annotations
 
+import os
 import re
 import warnings
 
@@ -17,7 +18,7 @@ from sklearn.linear_model import LogisticRegression
 from . import data_io
 from .config import (
     ATTACK_KEYWORDS, HISTORY_START, ITW_PATTERN, OUTPUT_DIR, PROCESSED_DIR,
-    PRODUCT_KEYWORDS, SEED, SMOOTH_M, seed_everything,
+    PRODUCT_KEYWORDS, REPO_DIR, SEED, SMOOTH_M, seed_everything,
 )
 
 warnings.filterwarnings("ignore", "This pattern is interpreted as a regular expression")
@@ -58,6 +59,14 @@ FEATURE_GROUPS = {
     "text": ["kev_sim_max", "kev_sim_mean_top5", "text_lr_score"],
     "prior": ["prior_lr_score", "prior_gbm_score"],
     "sibling": ["sib_batch_size", "sib_max_text_lr", "sib_any_flag", "sib_any_itw", "sib_max_epss_pct"],
+    # Batch size as a percentile within the snapshot month: 2026 CVE volume doubled (Microsoft went from
+    # ~100 to 470-998 CVEs a month), so the raw count extrapolates far outside the training range.
+    "sibling_rel": ["sib_batch_pct"],
+    # Point-in-time KEV (round 5): KEV additions between the annual history cutoff and the END of the
+    # row's snapshot month. Known at snapshot time. For training/validation the provided KEV file covers
+    # it; for the scoreboard it needs the live KEV feed, so these are OFF for predict unless
+    # AEGIS_USE_LIVE_KEV=1 (team decision, see docs/columns_used.md).
+    "fresh": ["kev_vendor_fresh", "assigner_kev_fresh", "sib_kev_fresh"],
     "cluster": ["cluster_kev_rate"],
     "caution": [
         *[f"cvss_{c}" for c in CVSS_ORD], "cvss3_score", "cvss4_score", "cwe_kev_rate",
@@ -478,6 +487,62 @@ def sibling_features(f: pd.DataFrame, df: pd.DataFrame, window_days: int = 3) ->
     return out
 
 
+USE_LIVE_KEV = os.environ.get("AEGIS_USE_LIVE_KEV") == "1"
+LIVE_KEV_PATH = REPO_DIR / "IBM" / "data" / "external" / "kev_live" / "kev_full_2026-11-06.csv"
+
+
+def point_in_time_kev(kev: pd.DataFrame, split: str) -> pd.DataFrame:
+    """KEV table for the 'fresh' features. Training/validation splits: the provided file (ends
+    2025-12-31, which is after every training snapshot). Scoreboard: the provided file only, unless the
+    team opts in to the live feed; every use is still truncated per row at its snapshot end."""
+    if split != "predict" or not USE_LIVE_KEV:
+        return kev[["cve_id", "vendor", "date_added"]]
+    live = pd.read_csv(LIVE_KEV_PATH, usecols=["cve_id", "vendor", "date_added"], dtype=str)
+    live["date_added"] = pd.to_datetime(live["date_added"])
+    live = live[live["date_added"] > kev["date_added"].max()]
+    print(f"  [predict] AEGIS_USE_LIVE_KEV=1: {len(live)} live KEV entries after {kev['date_added'].max().date()}")
+    return pd.concat([kev[["cve_id", "vendor", "date_added"]], live]).drop_duplicates("cve_id")
+
+
+def _window_count(keys: pd.Series, lo: pd.Series, hi: pd.Series, ev_keys: pd.Series, ev_dates: pd.Series) -> np.ndarray:
+    """For each row: number of events with the same key and lo < date <= hi."""
+    out = np.zeros(len(keys))
+    dates = {k: np.sort(g.to_numpy()) for k, g in ev_dates.groupby(ev_keys.to_numpy())}
+    lo_v, hi_v = lo.to_numpy(), hi.to_numpy()
+    for i, k in enumerate(keys.to_numpy()):
+        d = dates.get(k)
+        if d is not None and isinstance(k, str):
+            out[i] = np.searchsorted(d, hi_v[i], side="right") - np.searchsorted(d, lo_v[i], side="right")
+    return out
+
+
+def fresh_kev_features(f: pd.DataFrame, df: pd.DataFrame, hist: pd.DataFrame, kev_pit: pd.DataFrame) -> pd.DataFrame:
+    """KEV additions known at the end of the row's snapshot month but after its annual history cutoff.
+    kev_vendor_fresh: same resolved vendor. assigner_kev_fresh: CVEs from the same CNA.
+    sib_kev_fresh: same-CNA CVEs published within +-3 days that were already in KEV at snapshot end
+    (chained bugs: one added at once, its sibling later)."""
+    out = pd.DataFrame(index=f.index)
+    hc = pd.to_datetime(f["history_cutoff"])
+    se = pd.PeriodIndex(f["snapshot_month"], freq="M").to_timestamp(how="end").normalize()
+    se = pd.Series(se, index=f.index)
+    k = kev_pit.dropna(subset=["date_added"])
+    out["kev_vendor_fresh"] = _window_count(f["kev_vendor"], hc, se, k["vendor"], k["date_added"])
+    # CNA of each KEV CVE (from vulnerabilities.csv; KEV CVEs published before 2021 are irrelevant here).
+    ka = k.merge(hist[["cve_id", "assigner_org", "published"]], on="cve_id", how="inner")
+    org = df["assigner"].map(assigner_org)
+    out["assigner_kev_fresh"] = _window_count(org, hc, se, ka["assigner_org"], ka["date_added"])
+    rows = pd.DataFrame({"org": org.to_numpy(), "t": f["published"].to_numpy(), "se": se.to_numpy(),
+                         "cve": f["cve_id"].to_numpy(), "i": np.arange(len(f))})
+    kk = ka[ka["published"] >= rows["t"].min() - pd.Timedelta(days=3)][["cve_id", "assigner_org", "published", "date_added"]]
+    m = rows.merge(kk, left_on="org", right_on="assigner_org")
+    m = m[((m["published"] - m["t"]).abs() <= pd.Timedelta(days=3)) & (m["date_added"] <= m["se"]) & (m["cve_id"] != m["cve"])]
+    out["sib_kev_fresh"] = np.bincount(m["i"].to_numpy(), minlength=len(f)).astype(float)
+    # Leakage guard: no row may itself be in KEV by its snapshot end.
+    own = f[["cve_id"]].merge(k[["cve_id", "date_added"]], on="cve_id", how="left")["date_added"].to_numpy()
+    assert not (pd.notna(own) & (own <= se.to_numpy())).any(), "row already in KEV at snapshot end"
+    return out
+
+
 def cluster_features(df: pd.DataFrame, hist: pd.DataFrame) -> pd.DataFrame:
     path = PROCESSED_DIR / "clusters.parquet"
     out = pd.DataFrame(index=df.index)
@@ -519,7 +584,8 @@ def main() -> None:
         print("embeddings missing; text features = NaN (run src.embed)")
         emb, idx = None, None
 
-    splits = {n: pd.read_parquet(PROCESSED_DIR / f"{n}.parquet") for n in ("train_A", "valid", "train_final", "validV1", "trainV2", "validV2", "predict")}
+    splits = {n: pd.read_parquet(PROCESSED_DIR / f"{n}.parquet")
+              for n in ("train_A", "valid", "train_final", "validV1", "trainV2", "validV2", "trainV0", "validV0", "predict")}
     feats = {}
     for name, df in splits.items():
         parts = [
@@ -546,6 +612,8 @@ def main() -> None:
             f[f"{c}_raw"] = f[c]
             f[c] = f.groupby("history_cutoff")[c].rank(pct=True)
         f = pd.concat([f, sibling_features(f, df)], axis=1)
+        f["sib_batch_pct"] = f.groupby("snapshot_month")["sib_batch_size"].rank(pct=True)
+        f = pd.concat([f, fresh_kev_features(f, df, hist, point_in_time_kev(kev, name))], axis=1)
         feats[name] = f
         print(f"{name:12s} {f.shape} positives={f['label'].sum() if name != 'predict' else 'n/a'}")
 

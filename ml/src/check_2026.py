@@ -19,6 +19,25 @@ LABELS = REPO_DIR / "IBM" / "data" / "external" / "kev_live" / "scoreboard_2026_
 JUDGE_CUTOFF = "2026-11-04"
 
 
+def candidate_report(sb: pd.DataFrame) -> dict:
+    """REPORT ONLY, run after selection is frozen: every LR candidate refit on train_final and ranked
+    with ITW first, so the write-up can show the 2026 number of the candidates we did NOT pick too."""
+    from .config import PROCESSED_DIR
+    from .train import LR_EXPERIMENTS, MIN_TRAIN_HORIZON, final_order, lr_frame, make_compact_lr
+
+    tr = pd.read_parquet(PROCESSED_DIR / "features_train_final.parquet")
+    tr = tr[tr["days_to_label_cutoff"] >= MIN_TRAIN_HORIZON].reset_index(drop=True)
+    f = (pd.read_parquet(PROCESSED_DIR / "features_predict.parquet").drop(columns=["label"])
+         .merge(sb[["cve_id", "label"]], on="cve_id"))
+    out = {}
+    for name, cols in LR_EXPERIMENTS.items():
+        m = make_compact_lr().fit(lr_frame(tr, cols), tr["label"].astype(int))
+        o = final_order(m.decision_function(lr_frame(f, cols)), f["n_exploit_flags"] > 0, f["desc_itw_phrase"] == 1,
+                        None, True)
+        out[name] = int(f.loc[pd.Series(o).rank(ascending=False, method="first").to_numpy() <= TOP_K, "label"].sum())
+    return out
+
+
 def main() -> None:
     lab = pd.read_csv(LABELS, usecols=["cve_id", "date_added"], parse_dates=["date_added"])
     lab["label"] = (lab["date_added"] <= JUDGE_CUTOFF).astype(int)
@@ -38,7 +57,9 @@ def main() -> None:
         res["model_plain_probability_order"] = ranking_report(s["label"], s["p_exploit"])
         found = s.sort_values("rank").head(TOP_K).query("label == 1")["cve_id"].tolist()  # rank = submitted order
         res["submitted_top500"]["found_ids"] = found
+    res["all_candidates_itw_first"] = candidate_report(sb)
     (OUTPUT_DIR / "check_2026.json").write_text(json.dumps(res, indent=2))
+    print(pd.Series(res["all_candidates_itw_first"]).to_string())
     print(pd.DataFrame({k: {m: v.get(m) for m in ("hits@100", "hits@500", "hits@1000", "pr_auc")}
                         for k, v in res.items()}).T.to_string())
 

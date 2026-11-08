@@ -54,5 +54,15 @@
     "pr_auc": 0.02631,
     "n": 72670,
     "positives": 60
+  },
+  "all_candidates_itw_first": {
+    "C2_compact_v2": 21,
+    "C3_compact_v3": 19,
+    "C3b_v3_batchpct": 15,
+    "C4_compact_v4": 11,
+    "C4h_compact_v4+horizon": 12,
+    "C5_v4+batchpct": 13,
+    "C5n_v5_no_granite": 11,
+    "C6_v5+fresh_kev": 12
   }
 }

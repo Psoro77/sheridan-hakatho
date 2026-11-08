@@ -79,6 +79,14 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
         return "A same-day CVE from this vendor already has exploit code" if v == 1 else None
     if feat == "sib_any_itw":
         return "A same-day CVE from this vendor is reported exploited" if v == 1 else None
+    if feat == "kev_vendor_fresh":
+        return f"{r['vendor']} had {int(v)} KEV additions this year before this CVE's snapshot" if v and v > 0 else None
+    if feat == "assigner_kev_fresh":
+        return f"Same CNA had {int(v)} CVEs added to KEV this year before the snapshot" if v and v > 0 else None
+    if feat == "sib_kev_fresh":
+        return "A same-week CVE from this vendor is already in KEV" if v and v > 0 else None
+    if feat == "sib_batch_pct":
+        return None
     if feat == "sib_batch_size":
         return f"Part of a {int(v) + 1}-CVE vendor release (often chained bugs)" if v and v > 0 else None
     if feat == "sib_max_text_lr":

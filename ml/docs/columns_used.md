@@ -62,3 +62,14 @@ embedded 12 texts/s (about 5.5 h for 235k descriptions) against 63 texts/s for t
   fit on CVEs published 2022 → history cutoff; scored rows are published after the cutoff.
 - Sibling features (`sib_*`): same assigner, same snapshot month, published within ±3 days; only the
   siblings' snapshot-time values (text score, flags, ITW phrase, EPSS). Sibling KEV status is NOT used.
+
+## Round 5: computed and tested, NOT in the submitted model
+- `sib_batch_pct`: `sib_batch_size` as a percentile within the snapshot month (volume-drift-free version).
+- `kev_vendor_fresh`, `assigner_kev_fresh`, `sib_kev_fresh`: point-in-time KEV, i.e. KEV additions between the
+  annual history cutoff and the end of the row's snapshot month (same vendor / same CNA / same-CNA CVE published
+  within ±3 days). This information was public at snapshot time. Training and validation use the provided KEV file. The
+  scoreboard would need the live 2026 KEV feed, which is also the answer key, so it is behind an explicit opt-in
+  (`AEGIS_USE_LIVE_KEV=1`) and is **off**. It also lost on validation (20 vs 23 for the same model without it),
+  so we never used it.
+- The live KEV files in `IBM/data/external/kev_live/` are read only by `src/check_2026.py` (report). With the
+  opt-in off, `features.py` never opens them.

@@ -32,6 +32,10 @@ SPLITS = {
     "validV1": {"start": "2025-01-01", "end": "2025-04-30", "label_cutoff": "2025-12-31"},
     "trainV2": {"start": "2024-01-01", "end": "2025-04-30", "label_cutoff": "2025-04-30"},
     "validV2": {"start": "2025-05-01", "end": "2025-09-30", "label_cutoff": "2025-12-31"},
+    #   V0: trainV0 (2024-01..06, labels to 2024-06-30) -> validV0 (2024-07..12, labels to 2025-04-30).
+    #   Horizons 120-273 days mirror the scoreboard's 35-277; adds a third disjoint set of positives.
+    "trainV0": {"start": "2024-01-01", "end": "2024-06-30", "label_cutoff": "2024-06-30"},
+    "validV0": {"start": "2024-07-01", "end": "2024-12-31", "label_cutoff": "2025-04-30"},
     # predict comes from scoreboard_2026.csv; judges count KEV through 2026-11-04.
     "predict": {"start": "2026-01-01", "end": "2026-09-30", "label_cutoff": "2026-11-04"},
 }

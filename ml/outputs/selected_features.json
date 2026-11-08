@@ -2,6 +2,7 @@
   "experiment": "C3_compact_v3",
   "strategy": "itw_first",
   "flag_frac": null,
+  "cap": null,
   "itw_first": true,
   "components": [
     {
@@ -38,16 +39,24 @@
       ]
     }
   ],
-  "sum@depth": 24,
-  "recall@depth": 0.462,
+  "sum@depth": 27,
+  "recall@depth": 0.329,
+  "V0@depth": 3,
   "V1@depth": 9,
   "V2@depth": 15,
   "depth": {
+    "V0": 134,
     "V1": 110,
     "V2": 133
   },
   "baseline_exploit_then_epss@depth": {
+    "V0": 5,
     "V1": 7,
     "V2": 8
-  }
+  },
+  "accept_rule_reference": [
+    "C3_compact_v3",
+    "itw_first"
+  ],
+  "use_live_kev": false
 }

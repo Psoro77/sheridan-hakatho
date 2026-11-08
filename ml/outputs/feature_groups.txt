@@ -3,6 +3,8 @@ vendor_kw: ['assigner_kev_count', 'assigner_kev_rate', 'assigner_n_hist', 'desc_
 text: ['kev_sim_max', 'kev_sim_mean_top5', 'text_lr_score']
 prior: ['prior_lr_score', 'prior_gbm_score']
 sibling: ['sib_batch_size', 'sib_max_text_lr', 'sib_any_flag', 'sib_any_itw', 'sib_max_epss_pct']
+sibling_rel: ['sib_batch_pct']
+fresh: ['kev_vendor_fresh', 'assigner_kev_fresh', 'sib_kev_fresh']
 cluster: ['cluster_kev_rate']
 caution: ['cvss_attack_vector', 'cvss_attack_complexity', 'cvss_privileges_required', 'cvss_user_interaction', 'cvss_scope', 'cvss_confidentiality_impact', 'cvss_integrity_impact', 'cvss_availability_impact', 'cvss3_score', 'cvss4_score', 'cwe_kev_rate', 'cwe_79', 'cwe_89', 'cwe_78', 'cwe_22', 'cwe_787', 'cwe_416', 'cwe_20', 'cwe_287', 'cwe_502', 'cwe_77', 'cwe_94', 'cwe_862', 'cwe_352', 'cwe_434', 'cwe_125', 'cwe_918', 'cwe_306', 'cwe_843', 'cwe_288', 'cwe_119']
 itw: ['desc_itw_phrase']

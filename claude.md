@@ -372,3 +372,14 @@ CVSS-first 7, EPSS-first 6, exploit-then-EPSS 8 (matches the track README), mode
   5 positives of support; descriptions are today's versions.
 - 2026 answer key checked after each round (9, 11, 17, 15, 19 of 60), never used to choose. Final: **19/60**.
 - Earlier claims in rounds 2 and 3 above (folds 28/23, 31/23, "+3 to +5 on both folds") are superseded.
+
+### Round 5: review fixes tested, submission unchanged (2026-11-08, ~02:30 to 03:30 EST)
+- Added fold V0 (trainV0 2024-01..06, only 6 positives, so noisy; validV0 2024-07..12, 30 positives), vendor-release
+  caps (`itw+capN`), `sib_batch_pct`, point-in-time "fresh KEV" features (off for predict unless
+  `AEGIS_USE_LIVE_KEV=1`), a no-Granite ablation, and an accept rule (≥ +2 pooled, no fold loss). Nothing passed.
+- Granite ablation: removing the embedding-based features costs 4-5 validation hits.
+- 2026 check (report only): v2 21, **v3 19 (submitted)**, v4 11, v3 + batch percentile 15. v3 and v4 tie on validation.
+  Keeping v3 was decided after seeing 2026 (disclosed in `ml/docs/findings.md`, round 5).
+  The submitted `top500.csv` is byte-identical to round 4 (tag `submission-v4-19`).
+- Post-hoc lesson: the 2026 CVE flood (Microsoft 470-998 CVEs/month in Jul-Sep) makes raw batch size a real
+  dilution signal; validation years have no flood, so they cannot show it.

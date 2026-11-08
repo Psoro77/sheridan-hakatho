@@ -17,7 +17,7 @@ import pandas as pd
 
 from .config import ML_DIR, MODEL_DIR, OUTPUT_DIR, PROCESSED_DIR, TOP_K, seed_everything
 from .data_io import load_scoreboard
-from .train import final_order, lr_frame, rank_pct
+from .train import final_order, lr_frame, rank_pct, vendor_groups
 
 
 def load_meta() -> dict:
@@ -50,7 +50,9 @@ def main() -> None:
     order_score = (np.mean([rank_pct(v) for v in comps.values()], axis=0) if len(comps) > 1 else p)
     frac = meta.get("flag_frac")
     k_flag = None if frac is None else round(frac * TOP_K)
-    order = final_order(order_score, f["n_exploit_flags"] > 0, f["desc_itw_phrase"] == 1, k_flag, meta["itw_first"])
+    cap = meta.get("cap")
+    order = final_order(order_score, f["n_exploit_flags"] > 0, f["desc_itw_phrase"] == 1, k_flag, meta["itw_first"],
+                        groups=vendor_groups(f), cap=cap)
 
     out = f[["cve_id"]].copy()
     out["p_exploit"] = p
@@ -66,7 +68,11 @@ def main() -> None:
     top.to_csv(ML_DIR / "top500.csv", index=False)
     tf = f.set_index("cve_id").loc[top["cve_id"]]
     print(f"wrote top500.csv ({len(top)} unique IDs, all in scoreboard) | model={meta['experiment']} "
-          f"strategy={meta['strategy']} flag_frac={frac} k_flag={k_flag}")
+          f"strategy={meta['strategy']} flag_frac={frac} k_flag={k_flag} cap={cap}")
+    vc = tf["vendor"].value_counts()
+    print(f"top500 vendors: {vc.size} distinct, largest share {vc.index[0]} = {vc.iloc[0]}")
+    if meta.get("use_live_kev"):
+        print("WARNING: model uses point-in-time live KEV features (AEGIS_USE_LIVE_KEV=1); disclose in write-up")
     print(f"top500 composition: itw={int(tf['desc_itw_phrase'].sum())} flagged={int((tf['n_exploit_flags'] > 0).sum())} "
           f"by month={tf['snapshot_month'].value_counts().sort_index().to_dict()}")
 
