@@ -8,3 +8,4 @@ ml/data/
 *.npy
 ml/models/
 .env
+!ml/outputs/*.parquet
