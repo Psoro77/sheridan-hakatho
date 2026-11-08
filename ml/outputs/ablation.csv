@@ -1,9 +1,9 @@
 row,groups,n_features,hits@100,hits@500,hits@1000,pr_auc,n,positives,best_iter_mean
-1_exploit,exploit,7,9,17,22,0.0449,35280,52,300
-2_+vendor_kw,exploit+vendor_kw,44,6,19,21,0.05223,35280,52,300
-3_+text,exploit+vendor_kw+text,47,6,19,21,0.05223,35280,52,300
-4_+cluster,exploit+vendor_kw+text+cluster,48,6,19,21,0.05223,35280,52,300
-5_+caution,exploit+vendor_kw+text+cluster+caution,79,9,17,25,0.06344,35280,52,300
-5b_+caution_imputed,exploit+vendor_kw+text+cluster+caution,79,9,17,25,0.063,35280,52,300
-6_+itw,exploit+vendor_kw+text+cluster+caution+itw,80,9,17,25,0.06344,35280,52,300
-6b_core+itw,exploit+vendor_kw+text+cluster+itw,49,6,19,21,0.05223,35280,52,300
+1_exploit,exploit,8,7,17,21,0.04032,35280,52,300
+2_+vendor_kw,exploit+vendor_kw,45,6,18,22,0.05089,35280,52,300
+3_+text,exploit+vendor_kw+text,48,7,20,20,0.06522,35280,52,300
+4_+cluster,exploit+vendor_kw+text+cluster,49,7,20,20,0.04131,35280,52,300
+5_+caution,exploit+vendor_kw+text+cluster+caution,80,11,19,25,0.05205,35280,52,300
+5b_+caution_imputed,exploit+vendor_kw+text+cluster+caution,80,11,19,25,0.05261,35280,52,300
+6_+itw,exploit+vendor_kw+text+cluster+caution+itw,81,11,19,25,0.05205,35280,52,300
+6b_core+itw,exploit+vendor_kw+text+cluster+itw,50,7,20,20,0.04131,35280,52,300

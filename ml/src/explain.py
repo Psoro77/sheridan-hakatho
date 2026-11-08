@@ -12,7 +12,7 @@ import pandas as pd
 from .config import OUTPUT_DIR, PROCESSED_DIR, seed_everything
 from .predict import load_models, prepare
 
-NOT_A_REASON = {"days_to_label_cutoff", "desc_len"}
+NOT_A_REASON = {"days_to_label_cutoff", "days_before_snapshot", "desc_len"}
 KW_TEXT = {
     "kw_vpn": "VPN product", "kw_firewall": "Firewall product", "kw_gateway": "Gateway product",
     "kw_router": "Router", "kw_edge": "Edge device", "kw_appliance": "Network appliance",
@@ -42,13 +42,14 @@ def reason_text(feat: str, r: pd.Series) -> str | None:
     if feat in FLAG_TEXT:
         return FLAG_TEXT[feat] if v == 1 else None
     if feat == "n_exploit_flags":
-        return f"{int(v)} public exploit sources" if v and v > 0 else None
+        return (f"{int(v)} public exploit source" + ("s" if v > 1 else "")) if v and v > 0 else None
     if feat == "epss_pct":
         return f"EPSS in top {max(1, round((1 - v) * 100))}% of its month" if pd.notna(v) else None
     if feat in ("vendor_kev_count", "desc_vendor_kev_count", "assigner_kev_count"):
         return f"Vendor {r['vendor']} attacked {int(v)} times before" if v and v > 0 else None
     if feat in ("assigner_kev_rate", "desc_vendor_kev_rate", "assigner_n_hist"):
-        return f"Vendor {r['vendor']} has a high past KEV rate"
+        rate = max(r.get("assigner_kev_rate") or 0, r.get("desc_vendor_kev_rate") or 0)
+        return f"{rate:.1%} of past {r['vendor']} CVEs were exploited (KEV)"
     if feat in ("kev_sim_max", "kev_sim_mean_top5"):
         return f"Similar to past KEV entries ({r['kev_sim_max']:.2f})" if pd.notna(r.get("kev_sim_max")) else None
     if feat == "text_lr_score":

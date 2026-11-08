@@ -1,0 +1,24 @@
+C:\Users\DELL\Documents\work\code\sheridan-ml\.venv\Lib\site-packages\umap\umap_.py:1952: UserWarning: n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.
+  warn(
+UMAP fit on 40,000 in 98s
+UMAP transform all 235,076 in 434s
+C:\Users\DELL\Documents\work\code\sheridan-ml\.venv\Lib\site-packages\sklearn\cluster\_hdbscan\hdbscan.py:722: FutureWarning: The default value of `copy` will change from False to True in 1.10. Explicitly set a value for `copy` to silence this warning.
+  warn(
+HDBSCAN: 140 clusters, noise 36.8% (450s)
+global prior 0.01039
+ cluster_id                                                                                                 name  size  kev_hits_train  kev_rate_train  n_scoreboard  lift_vs_prior
+          1               fusion middleware, oracle fusion, middleware component, weblogic, vulnerability oracle   729              19         0.13720           494          13.21
+        126                                                   device reload, cisco ios, ios software, asa, cisco   504              50         0.12336            96          11.88
+         19                     security severity, chromium security, page chromium, google chrome, chrome prior   873               9         0.11368           610          10.94
+        102 privilege vulnerability, elevation privilege, vulnerability windows, windows kernel, locally windows  1083             100         0.10892           146          10.49
+         65                   overflow microsoft, office word, word allows, locally heap-based, microsoft office   418              13         0.10651           181          10.25
+         21                     security severity, chromium security, page chromium, google chrome, chrome prior   995              23         0.09173           638           8.83
+        100                            locally use, privileges locally, network use, free microsoft, file driver  1162              25         0.08319           501           8.01
+         44           progress telerik, telerik, deserialization untrusted, result deserialization, telerik ajax   439              22         0.07792           143           7.50
+         24                                    ipados, ios ipados, addressed improved, improved memory, app able   510              26         0.07122           119           6.86
+         63                         simple editor, vulnerability microsoft, server remote, contain remote, crowd  2479             138         0.06657           343           6.41
+         23                              ipados, ios ipados, improved bounds, addressed improved, checking issue   574              15         0.05103           160           4.91
+         51                             connect secure, ivanti, secure version, ivanti connect, ivanti avalanche   296              13         0.04820            34           4.64
+          0           fusion middleware, oracle fusion, middleware component, vulnerability oracle, impacts cvss   300               1         0.04473           260           4.31
+         97   microsoft edge, edge chromium-based, chromium-based, chromium-based allows, vulnerability exposure  1092              32         0.04294           277           4.13
+         48                          fortios, fortiproxy, fortios versions, fortios fortios, fortiproxy versions   550              17         0.03677            92           3.54

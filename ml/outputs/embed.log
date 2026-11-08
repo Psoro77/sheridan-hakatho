@@ -1,3 +1,62 @@
 texts to embed: 235,076
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 3274.99it/s]
+chunk 1/58 done, 1.1 min elapsed
+chunk 2/58 done, 1.7 min elapsed
+chunk 3/58 done, 2.3 min elapsed
+chunk 4/58 done, 2.8 min elapsed
+chunk 5/58 done, 4.0 min elapsed
+chunk 6/58 done, 5.4 min elapsed
+chunk 7/58 done, 6.4 min elapsed
+chunk 8/58 done, 7.4 min elapsed
+chunk 9/58 done, 8.6 min elapsed
+chunk 10/58 done, 10.0 min elapsed
+chunk 11/58 done, 11.0 min elapsed
+chunk 12/58 done, 12.1 min elapsed
+chunk 13/58 done, 13.6 min elapsed
+chunk 14/58 done, 15.1 min elapsed
+chunk 15/58 done, 16.4 min elapsed
+chunk 16/58 done, 17.7 min elapsed
+chunk 17/58 done, 18.8 min elapsed
+chunk 18/58 done, 19.4 min elapsed
+chunk 19/58 done, 19.9 min elapsed
+chunk 20/58 done, 20.5 min elapsed
+chunk 21/58 done, 21.4 min elapsed
+chunk 22/58 done, 22.9 min elapsed
+chunk 23/58 done, 24.3 min elapsed
+chunk 24/58 done, 25.6 min elapsed
+chunk 25/58 done, 27.0 min elapsed
+chunk 26/58 done, 28.4 min elapsed
+chunk 27/58 done, 29.7 min elapsed
+chunk 28/58 done, 30.6 min elapsed
+chunk 29/58 done, 31.1 min elapsed
+chunk 30/58 done, 31.9 min elapsed
+chunk 31/58 done, 33.0 min elapsed
+chunk 32/58 done, 34.1 min elapsed
+chunk 33/58 done, 35.2 min elapsed
+chunk 34/58 done, 36.3 min elapsed
+chunk 35/58 done, 37.4 min elapsed
+chunk 36/58 done, 38.8 min elapsed
+chunk 37/58 done, 39.8 min elapsed
+chunk 38/58 done, 40.8 min elapsed
+chunk 39/58 done, 41.8 min elapsed
+chunk 40/58 done, 42.8 min elapsed
+chunk 41/58 done, 43.9 min elapsed
+chunk 42/58 done, 44.8 min elapsed
+chunk 43/58 done, 45.9 min elapsed
+chunk 44/58 done, 47.2 min elapsed
+chunk 45/58 done, 48.3 min elapsed
+chunk 46/58 done, 49.1 min elapsed
+chunk 47/58 done, 49.9 min elapsed
+chunk 48/58 done, 51.0 min elapsed
+chunk 49/58 done, 52.2 min elapsed
+chunk 50/58 done, 53.5 min elapsed
+chunk 51/58 done, 54.9 min elapsed
+chunk 52/58 done, 56.2 min elapsed
+chunk 53/58 done, 57.4 min elapsed
+chunk 54/58 done, 58.5 min elapsed
+chunk 55/58 done, 59.3 min elapsed
+chunk 56/58 done, 60.0 min elapsed
+chunk 57/58 done, 60.9 min elapsed
+chunk 58/58 done, 61.3 min elapsed
+saved (235076, 384) to C:\Users\DELL\Documents\work\code\sheridan-ml\ml\data\processed\embeddings.npy

@@ -1,0 +1,6 @@
+approach,hits@100,hits@500,hits@1000,pr_auc,n,positives
+logreg_default,11,18,25,0.0505,35280,52
+compact_lr,12,19,27,0.07462,35280,52
+text_first,5,13,17,0.03714,35280,52
+blend_4_+cluster,9,18,22,0.09307,35280,52
+blend_6b_core+itw,9,18,22,0.09307,35280,52

@@ -41,7 +41,7 @@ CVSS_ORD = {
 VENDOR_STOP = {"multiple", "multiple vendors", "unknown", "n/a", "the", "open source"}
 
 FEATURE_GROUPS = {
-    "exploit": ["epss_pct", *FLAGS, "n_exploit_flags", "days_to_label_cutoff"],
+    "exploit": ["epss_pct", *FLAGS, "n_exploit_flags", "days_to_label_cutoff", "days_before_snapshot"],
     "vendor_kw": [
         "assigner_kev_count", "assigner_kev_rate", "assigner_n_hist",
         "desc_vendor_kev_count", "desc_vendor_kev_rate", "vendor_kev_count",
@@ -268,7 +268,7 @@ def main() -> None:
     for name, df in splits.items():
         parts = [
             df[["cve_id", "published", "snapshot_month", "label", "epss", "epss_pct", *FLAGS, "n_exploit_flags",
-                "days_to_label_cutoff", "history_cutoff"]],
+                "days_to_label_cutoff", "days_before_snapshot", "history_cutoff"]],
             history_features(df, hist, kev, vendor_rx),
             text_keyword_features(df),
             caution_features(df),

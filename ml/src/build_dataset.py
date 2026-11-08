@@ -25,6 +25,9 @@ def add_common(df: pd.DataFrame, kev: pd.DataFrame, label_cutoff: str | None) ->
     df = df.merge(kev[["cve_id", "date_added"]], on="cve_id", how="left")
     df["snapshot_end"] = month_end(df["snapshot_month"])
     df["history_cutoff"] = history_cutoff(df["published"])
+    # "Free time" before the snapshot: late-month CVEs often have no EPSS/flags yet. Capped at 30 so
+    # scoreboard June CVEs (July snapshot, 31-60 days) map to the closest training case.
+    df["days_before_snapshot"] = (df["snapshot_end"] - df["published"]).dt.days.clip(upper=30)
     if label_cutoff is not None:
         cutoff = pd.Timestamp(label_cutoff)
         df["label"] = ((df["date_added"] > df["snapshot_end"]) & (df["date_added"] <= cutoff)).astype("int8")

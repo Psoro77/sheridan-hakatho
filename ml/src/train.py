@@ -31,6 +31,20 @@ ABLATION = [
     ("6b_core+itw", ["exploit", "vendor_kw", "text", "cluster", "itw"], False),
 ]
 DEFAULT_GROUPS = ["exploit", "vendor_kw", "text", "cluster"]
+ABLATION_FOR_BLEND = ["4_+cluster", "6b_core+itw"]
+# Compact, robust LR: few strong, explainable features (works well with ~50 positives).
+COMPACT = [
+    "epss_pct", "n_exploit_flags", "days_before_snapshot", "days_to_label_cutoff",
+    "assigner_kev_rate", "desc_vendor_kev_rate", "vendor_kev_count",
+    "text_lr_score", "kev_sim_max", "cluster_kev_rate", "kw_unauth", "kw_rce", "desc_itw_phrase",
+]
+
+
+def make_compact_lr():
+    return make_pipeline(
+        SimpleImputer(strategy="median", add_indicator=False), StandardScaler(),
+        LogisticRegression(C=0.1, max_iter=5000, class_weight="balanced", random_state=SEED),
+    )
 N_SEEDS = 5
 SELECTION_PATH = OUTPUT_DIR / "selected_features.json"
 
@@ -102,6 +116,21 @@ def run_validation() -> None:
     lr.fit(tr[cols], ytr)
     valid_scores["score_logreg_default"] = lr.decision_function(va[cols])
     print("logreg default:", ranking_report(yva, valid_scores["score_logreg_default"]))
+
+    # Parallel approaches (selected on valid only).
+    rk = lambda s: pd.Series(np.asarray(s, dtype=float)).rank(pct=True, na_option="bottom").to_numpy()
+    clr = make_compact_lr().fit(tr[COMPACT], ytr)
+    valid_scores["score_compact_lr"] = clr.decision_function(va[COMPACT])
+    flags_epss = va["n_exploit_flags"].clip(upper=1) + va["epss_pct"].fillna(0)
+    valid_scores["score_text_first"] = (rk(va["text_lr_score"]) + rk(flags_epss)) / 2
+    approach_rows = []
+    for name in ABLATION_FOR_BLEND:
+        valid_scores[f"score_blend_{name}"] = (rk(valid_scores[f"score_lgbm_{name}"]) + rk(valid_scores["score_compact_lr"])) / 2
+    for col in [c for c in valid_scores.columns if c.startswith("score_") and not c.startswith("score_lgbm_")]:
+        rep = ranking_report(yva, valid_scores[col])
+        approach_rows.append({"approach": col.removeprefix("score_"), **rep})
+        print(f"{col:32s} hits@100={rep['hits@100']:>3} hits@500={rep['hits@500']:>3} hits@1000={rep['hits@1000']:>3} pr_auc={rep['pr_auc']}")
+    pd.DataFrame(approach_rows).to_csv(OUTPUT_DIR / "approaches.csv", index=False)
 
     # Selection rule (logged): start from core; add a caution group only if it gains >= 2 hits@500
     # AND the gain survives median imputation (i.e. it does not come from missingness).
